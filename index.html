@@ -762,43 +762,48 @@
     }
 
     let holidays = [], employeeData = [];
-async function reload() {
+    async function reload() {
 
-  if (!currentUserId) return;
+      try {
 
-  const year = parseInt(document.getElementById("year").value);
-  const month = parseInt(document.getElementById("month").value);
+        const year = document.getElementById("year").value;
+        const month = document.getElementById("month").value;
 
-  try {
+        if (!year || !month) {
+          console.warn("Year or Month missing");
+          return;
+        }
 
-    const result = await callAPI("getInitialData", {
-      userId: currentUserId,
-      year: year,
-      month: month
-    });
+        showLoading(true);
 
-    console.log("Initial Data:", result);
+        const result = await callAPI("getInitialData", {
+          userId: currentUserId,
+          year: year,
+          month: month
+        });
 
-    // ✅ เก็บข้อมูลลงตัวแปร global
-    employeeData = result.employees || [];
-    holidays = result.holidays || [];
+        if (!result) {
+          console.error("No data returned from server");
+          showLoading(false);
+          return;
+        }
 
-    // ✅ สร้างตารางใหม่ก่อน
-    buildTable();
+        employeeData = result.employees || [];
+        holidays = result.holidays || [];
+        const schedule = result.schedule || [];
+        const settings = result.settings || null;
 
-    // ✅ หยอดข้อมูลลงตาราง
-    fillTableWithData(employeeData, result.schedule || []);
+        fillSettings(settings);
+        buildTable();
+        fillTableWithData(employeeData, schedule);
+        showLoading(false);
 
-    // ✅ คำนวณสรุป
-    calculateSummary();
+      } catch (err) {
+        console.error("Reload error:", err);
+        showLoading(false);
+      }
+    }
 
-    // ✅ อัปเดตยอดทั้งปี
-    updateYearlyDisplay(currentUserId);
-
-  } catch (err) {
-    console.error(err);
-  }
-}
     // ฟังก์ชันหยอดข้อมูลลงตาราง (ตัวเต็ม)
     function fillTableWithData(employees, schedule) {
       const tableBody = document.getElementById("tbody");
