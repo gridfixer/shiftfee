@@ -426,13 +426,18 @@
 </head>
 
 <body>
-
+  
   <div class="topbar">
     <div class="topbar-title">ระบบควบคุมค่าใช้จ่ายในการอยู่เวร StandBy</div>
-    <div id="loginSection" class="login-box">
+    <!-- <div id="loginSection" class="login-box">
       <input id="username" placeholder="ชื่อผู้ใช้งาน">
       <input type="password" id="password" placeholder="รหัสผ่าน">
-      <button onclick="login()">เข้าสู่ระบบ</button>
+      <button onclick="login()">เข้าสู่ระบบ</button> -->
+      <form onsubmit="login(); return false;">
+        <input type="text" id="username" required>
+        <input type="password" id="password" required>
+        <button type="submit">เข้าสู่ระบบ</button>
+      </form>
     </div>
 
     <div id="welcomeSection" style="display:none;">
