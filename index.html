@@ -693,7 +693,7 @@
         if (!yearlyEl || !percentEl || !budgetEl) return;
     
         // ===== เรียก API ดึงยอดรวมทั้งปี =====
-        const result = await callAPI("getYearlyTotalCost", {
+        const result = await callAPI("getYearlyTotal", {
           userId: userId,
           year: year
         });
@@ -712,7 +712,7 @@
           percent = (yearlyTotal / budget) * 100;
         }
     
-        percentEl.innerText = percent.toFixed(2) + "%";
+        percentEl.innerText = percent.toFixed(2);
     
       } catch (err) {
         console.error("Yearly Display Error:", err);
