@@ -2,10 +2,11 @@
 <html>
 
 <head>
-    <base target="_top">
+    <title>ระบบควบคุมค่าใช้จ่ายในการอยู่เวร</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400&display=swap" rel="stylesheet">
 
@@ -577,12 +578,24 @@
             try {
                 const response = await fetch(WEB_APP_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ functionName: functionName, arguments: args })
+                    body: JSON.stringify({ functionName: functionName, arguments: args }),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' } // GAS ต้องการแบบนี้
                 });
-                const result = await response.json();
-                if (successHandler) successHandler(result);
+
+                const text = await response.text(); // อ่านเป็น Text ก่อน
+                if (!text) {
+                    throw new Error("Server did not return any data");
+                }
+
+                const result = JSON.parse(text); // ค่อยแปลงเป็น JSON
+
+                if (result.error) {
+                    if (failureHandler) failureHandler(result.error);
+                } else {
+                    if (successHandler) successHandler(result);
+                }
             } catch (err) {
-                if (failureHandler) failureHandler(err);
+                if (failureHandler) failureHandler(err.toString());
                 console.error("Error calling server:", err);
             }
         }
