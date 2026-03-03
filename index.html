@@ -591,8 +591,11 @@
         if (welcomeUser) welcomeUser.innerText = savedName;
         if (mainContent) mainContent.style.display = "block";
 
-        if (typeof initDateDropdown === "function") initDateDropdown();
+        initDateDropdown();
 
+        buildTable();   // ⭐⭐⭐ เพิ่มบรรทัดนี้
+
+        reload();       // ค่อยโหลดข้อมูลลงตาราง
       }
     };
 
@@ -626,6 +629,7 @@
           document.getElementById("mainContent").style.display = "block";
 
           initDateDropdown();
+          buildTable();         // 2. สร้างตาราง
           reload();
 
         } else {
