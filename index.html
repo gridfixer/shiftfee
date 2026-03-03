@@ -682,46 +682,42 @@
     }
 
     // let costFromOtherMonths = 0; // ตัวแปรเก็บยอดรวมของเดือนอื่นๆ ในปีนั้น
-    async function updateYearlyDisplay(userId) {
-      try {
-    
-        const year = document.getElementById("year")?.value;
-    
-        const yearlyEl = document.getElementById("yearlyTotalCost");
-        const percentEl = document.getElementById("percentValue");
-        const budgetEl = document.getElementById("budgetAllocated");
-    
-        if (!yearlyEl || !percentEl || !budgetEl) return;
-    
-        // ===== เรียก API ดึงยอดรวมทั้งปี =====
-        const result = await callAPI("getYearlyTotal", {
-          userId: userId,
-          year: year
-        });
-    
-        const yearlyTotal = Number(result?.total || 0);
-        const budget = Number(
-          (budgetEl.value || "0").replace(/,/g, '')
-        );
-    
-        // ===== แสดงยอดรวม =====
-        yearlyEl.innerText = yearlyTotal.toLocaleString("th-TH", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        });
-    
-        // ===== คำนวณเปอร์เซ็นต์ =====
-        let percent = 0;
-        if (budget > 0) {
-          percent = (yearlyTotal / budget) * 100;
-        }
-    
-        percentEl.innerText = percent.toFixed(2);
-    
-      } catch (err) {
-        console.error("Yearly Display Error:", err);
-      }
+async function updateYearlyDisplay(userId) {
+  try {
+
+    const year = document.getElementById("year")?.value;
+    const yearlyEl = document.getElementById("yearlyTotalCost");
+    const percentEl = document.getElementById("percentValue");
+    const budgetEl = document.getElementById("budgetAllocated");
+
+    if (!yearlyEl || !percentEl || !budgetEl) return;
+
+    const result = await callAPI("getYearlyTotal", {
+      userId: userId,
+      year: year
+    });
+
+    const yearlyTotal = Number(result?.total || 0);
+    const budget = Number(
+      (budgetEl.value || "0").replace(/,/g, '')
+    );
+
+    yearlyEl.innerText = yearlyTotal.toLocaleString("th-TH", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+
+    let percent = 0;
+    if (budget > 0) {
+      percent = (yearlyTotal / budget) * 100;
     }
+
+    percentEl.innerText = percent.toFixed(2);
+
+  } catch (err) {
+    console.error("Yearly Display Error:", err);
+  }
+}
     
     function formatBudgetInput(el) {
       let value = el.value.replace(/,/g, '');
@@ -1159,128 +1155,66 @@
     }
 
     function calculateSummary() {
-      const tbody = document.getElementById("tbody");
-      if (!tbody) return;
-      const rows = tbody.rows;
-      if (rows.length === 0) return;
-
-      // --- ส่วนที่ 1: คำนวณจำนวนเวรตามแผน (Target) ---
-      const year = parseInt(document.getElementById("year").value) - 543;
-      const month = parseInt(document.getElementById("month").value);
-      const needP = parseInt(document.getElementById("needP").value) || 0;
-      const needCH = parseInt(document.getElementById("needCH").value) || 0;
-      const dayS = parseInt(document.getElementById("dayShift").value) || 0;
-      const holiS = parseInt(document.getElementById("holiShift").value) || 0;
-
-      const daysInMonth = new Date(year, month, 0).getDate();
-      let totalTarget = 0;
-
-      for (let d = 1; d <= daysInMonth; d++) {
-        const isHoli = (typeof holidays !== 'undefined' && holidays.includes(d));
-        // เงื่อนไข: วันหยุดมีกี่ผลัด (holiS), วันธรรมดามีกี่ผลัด (dayS)
-        const shiftsPerDay = isHoli ? holiS : dayS;
-        // (จำนวนผลัด x จำนวนคน พชง.) + (จำนวนผลัด x จำนวนคน ชชง.)
-        totalTarget += (shiftsPerDay * needP) + (shiftsPerDay * needCH);
-      }
-
-      // แสดงผล TargetShifts (จำนวนเวรจากการคำนวณ)
-      const targetEl = document.getElementById("targetShifts");
-      if (targetEl) targetEl.innerText = totalTarget;
-
-      // --- ส่วนที่ 2: คำนวณเวรที่ลงจริงในตาราง (Actual) ---
-      let grandShifts = 0;
-      let grandCost = 0;
-      let dayCounters = new Array(daysInMonth).fill(0);
-
-      for (let i = 0; i < rows.length - 1; i++) {
-        if (rows[i].id === "totalRow") continue;
-
-        const nameText = rows[i].cells[1].innerText.trim();
-        const salary = parseFloat(rows[i].cells[2].innerText.replace(/,/g, '')) || 0;
-        let rowShiftCount = 0;
-
-        for (let d = 0; d < daysInMonth; d++) {
-          const cell = rows[i].cells[4 + d];
-          if (cell) {
-            const val = cell.innerText.trim();
-            // นับเฉพาะช่องที่มีเลขเวร 1, 2, 3
-            if (val !== "" && ["1", "2", "3"].includes(val)) {
-              rowShiftCount++;
-              dayCounters[d]++;
-            }
+      try {    
+        const table = document.getElementById("expenseTable");
+        if (!table) return;
+    
+        const rows = table.querySelectorAll("tbody tr");
+    
+        let totalExpense = 0;
+        let totalIncome = 0;
+    
+        rows.forEach(row => {
+          const typeCell = row.querySelector(".type");      // ประเภท (income / expense)
+          const amountCell = row.querySelector(".amount");  // จำนวนเงิน
+    
+          if (!typeCell || !amountCell) return;
+    
+          const type = typeCell.innerText.trim().toLowerCase();
+          const amount = Number(
+            amountCell.innerText.replace(/,/g, '')
+          ) || 0;
+    
+          if (type === "income") {
+            totalIncome += amount;
+          } else {
+            totalExpense += amount;
           }
-        }
-
-        const costPerShift = (salary / 30 / 7 * 8);
-        const totalCost = rowShiftCount * costPerShift;
-
-        // อัปเดตรายแถว (ไม่มีทศนิยม)
-        const sumCell = rows[i].querySelector(".sumCell");
-        const costCell = rows[i].querySelector(".costCell");
-        if (sumCell) sumCell.innerText = (nameText === "") ? "" : rowShiftCount;
-        // if (costCell) costCell.innerText = (nameText === "" || totalCost === 0) ? "" : Math.round(totalCost).toLocaleString();
-        if (costCell) costCell.innerText = (nameText === "" || totalCost === 0) ? "" : totalCost.toLocaleString('th-TH', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
         });
-
-        if (nameText !== "") {
-          grandShifts += rowShiftCount;
-          grandCost += totalCost;
+    
+        const netTotal = totalIncome - totalExpense;
+    
+        // ===== แสดงผลรวมรายเดือน =====
+        const totalIncomeEl = document.getElementById("totalIncome");
+        const totalExpenseEl = document.getElementById("totalExpense");
+        const netTotalEl = document.getElementById("netTotal");
+    
+        if (totalIncomeEl)
+          totalIncomeEl.innerText = totalIncome.toLocaleString("th-TH", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          });
+    
+        if (totalExpenseEl)
+          totalExpenseEl.innerText = totalExpense.toLocaleString("th-TH", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          });
+    
+        if (netTotalEl)
+          netTotalEl.innerText = netTotal.toLocaleString("th-TH", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          });
+    
+        // 🔥 สำคัญ — อัปเดตยอดทั้งปีใหม่หลังคำนวณเดือน
+        if (typeof currentUserId !== "undefined") {
+          updateYearlyDisplay(currentUserId);
         }
+    
+      } catch (err) {
+        console.error("calculateSummary error:", err);
       }
-
-      // --- ส่วนที่ 3: อัปเดต Card ด้านบน (สรุปผล) ---
-      const safeUpdate = (id, val) => {
-        const el = document.getElementById(id);
-        if (el) el.innerText = val;
-      };
-
-      // ค่าใช้จ่าย
-      const costString = grandCost.toLocaleString('th-TH', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
-      safeUpdate("statCost", costString); // เดือนนี้
-      safeUpdate("budgetUsed", costString); // ทั้งปี (ปัจจุบัน)
-
-      // ข้อมูลอื่นๆ
-      safeUpdate("statShifts", grandShifts); // ลงเวรจริง
-
-      // จัดสรร (จัดฟอร์แมตเลขจัดสรรให้ไม่มีทศนิยม)
-      const budgetAllocEl = document.getElementById("budgetAllocated");
-      let budgetVal = 0;
-      if (budgetAllocEl) {
-        // ใช้ .value แทน .innerText เพราะเป็น input tag
-        budgetVal = parseFloat(budgetAllocEl.value.replace(/,/g, '')) || 0;
-      }
-      คำนวณยอดรวมทั้งปี (ยอดเดือนอื่น + ยอดเดือนนี้)
-      const yearlyTotal = costFromOtherMonths + grandCost;
-      const yearlyTotalEl = document.getElementById("yearlyTotalCost");
-      if (yearlyTotalEl) {
-        yearlyTotalEl.innerText = yearlyTotal.toLocaleString('th-TH', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        });
-      }
-      ส่วนการคำนวณเปอร์เซ็นต์ (ใช้ยอดที่คำนวณได้)
-      ===== คำนวณเปอร์เซ็นต์ใหม่ (ใช้ค่าที่แสดงในกล่อง "ทั้งปี") =====
-
-      // แถวรวมรายวันท้ายตาราง
-      dayCounters.forEach((count, index) => {
-        const el = document.getElementById(`dayTotal_${index + 1}`);
-        if (el) el.innerText = count > 0 ? count : "";
-      });
-
-      // 6. อัปเดตช่องสรุปท้ายตาราง (ขวาล่างสุด)
-      // รวมล่างสุด
-      document.getElementById("grandTotalShifts").innerText = grandShifts > 0 ? grandShifts : "";
-      // document.getElementById("grandTotalCost").innerText = grandCost > 0 ? Math.round(grandCost).toLocaleString() : "";
-      document.getElementById("grandTotalCost").innerText = grandCost > 0 ? grandCost.toLocaleString('th-TH', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }) : "";
-
     }
 
     async function updateBudgetUI() {    
