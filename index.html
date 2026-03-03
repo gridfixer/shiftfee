@@ -1254,33 +1254,17 @@
         // ใช้ .value แทน .innerText เพราะเป็น input tag
         budgetVal = parseFloat(budgetAllocEl.value.replace(/,/g, '')) || 0;
       }
-      // คำนวณยอดรวมทั้งปี (ยอดเดือนอื่น + ยอดเดือนนี้)
-      // const yearlyTotal = costFromOtherMonths + grandCost;
-      // const yearlyTotalEl = document.getElementById("yearlyTotalCost");
-      // if (yearlyTotalEl) {
-      //   yearlyTotalEl.innerText = yearlyTotal.toLocaleString('th-TH', {
-      //     minimumFractionDigits: 2,
-      //     maximumFractionDigits: 2
-      //   });
-      // }
-      // ส่วนการคำนวณเปอร์เซ็นต์ (ใช้ยอดที่คำนวณได้)
-      // ===== คำนวณเปอร์เซ็นต์ใหม่ (ใช้ค่าที่แสดงในกล่อง "ทั้งปี") =====
-      if (budgetAllocEl) {
-        const budgetVal = parseFloat(budgetAllocEl.value.replace(/,/g, '')) || 0;
-        const yearlyText = document.getElementById("yearlyTotalCost")?.innerText || "0";
-        const yearlyTotal = parseFloat(yearlyText.replace(/,/g, '')) || 0;
-      
-        if (budgetVal > 0) {
-          const percent = (yearlyTotal / budgetVal) * 100;
-          document.getElementById("percentValue").innerText =
-            percent.toLocaleString('th-TH', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            });
-        } else {
-          document.getElementById("percentValue").innerText = "0.00";
-        }
+      คำนวณยอดรวมทั้งปี (ยอดเดือนอื่น + ยอดเดือนนี้)
+      const yearlyTotal = costFromOtherMonths + grandCost;
+      const yearlyTotalEl = document.getElementById("yearlyTotalCost");
+      if (yearlyTotalEl) {
+        yearlyTotalEl.innerText = yearlyTotal.toLocaleString('th-TH', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
       }
+      ส่วนการคำนวณเปอร์เซ็นต์ (ใช้ยอดที่คำนวณได้)
+      ===== คำนวณเปอร์เซ็นต์ใหม่ (ใช้ค่าที่แสดงในกล่อง "ทั้งปี") =====
 
       // แถวรวมรายวันท้ายตาราง
       dayCounters.forEach((count, index) => {
