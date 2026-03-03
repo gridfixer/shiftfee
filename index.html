@@ -774,8 +774,6 @@
           return;
         }
 
-        showLoading(true);
-
         const result = await callAPI("getInitialData", {
           userId: currentUserId,
           year: year,
@@ -784,7 +782,6 @@
 
         if (!result) {
           console.error("No data returned from server");
-          showLoading(false);
           return;
         }
 
@@ -796,11 +793,9 @@
         fillSettings(settings);
         buildTable();
         fillTableWithData(employeeData, schedule);
-        showLoading(false);
 
       } catch (err) {
         console.error("Reload error:", err);
-        showLoading(false);
       }
     }
 
