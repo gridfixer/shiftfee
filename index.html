@@ -549,15 +549,16 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbyPBa8fWtxQBlfoooFwWdIKoLOLRkGw4fisbJUTphk0BHjPtEK-Y6qqp6mI-Jn5Xoxv/exec";
 
     async function callAPI(action, payload) {
-      const formData = new FormData();
-      formData.append("data", JSON.stringify({
-        action,
-        ...payload
-      }));
     
       const response = await fetch(API_URL, {
         method: "POST",
-        body: formData
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify({
+          action,
+          payload
+        })
       });
     
       return await response.json();
