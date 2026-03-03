@@ -799,6 +799,25 @@
       }
     }
 
+    function fillSettings(settings) {
+
+      if (!settings) return;
+
+      const dayShift = document.getElementById("dayShift");
+      const holiShift = document.getElementById("holiShift");
+      const needP = document.getElementById("needP");
+      const needCH = document.getElementById("needCH");
+      const budget = document.getElementById("budgetAllocated");
+
+      if (dayShift) dayShift.value = settings.day_shift || 0;
+      if (holiShift) holiShift.value = settings.holi_shift || 0;
+      if (needP) needP.value = settings.need_p || 0;
+      if (needCH) needCH.value = settings.need_ch || 0;
+      if (budget)
+        budget.value = Number(settings.budget || 0).toLocaleString("th-TH");
+    }
+
+
     // ฟังก์ชันหยอดข้อมูลลงตาราง (ตัวเต็ม)
     function fillTableWithData(employees, schedule) {
       const tableBody = document.getElementById("tbody");
