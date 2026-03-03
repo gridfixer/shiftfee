@@ -545,26 +545,19 @@
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbyPBa8fWtxQBlfoooFwWdIKoLOLRkGw4fisbJUTphk0BHjPtEK-Y6qqp6mI-Jn5Xoxv/exec";
 
-    async function callAPI(action, payload = {}) {
+    async function callAPI(action, payload) {
+      const formData = new FormData();
+      formData.append("data", JSON.stringify({
+        action,
+        ...payload
+      }));
     
-      const res = await fetch(API_URL, {
+      const response = await fetch(API_URL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          action,
-          ...payload
-        })
+        body: formData
       });
     
-      const data = await res.json();
-    
-      if (!data.success) {
-        throw new Error(data.message || "API Error");
-      }
-    
-      return data;
+      return await response.json();
     }
     
     // --- จุดเพิ่มที่ 1: ตรวจสอบสถานะตอนโหลดหน้าเว็บ (F5) ---
