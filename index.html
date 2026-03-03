@@ -567,11 +567,14 @@
     // --- จุดเพิ่มที่ 1: ตรวจสอบสถานะตอนโหลดหน้าเว็บ (F5) ---
     let currentUserId = null;
 window.onload = function () {
+
   const savedId = localStorage.getItem("app_userId");
   const savedName = localStorage.getItem("app_userName");
 
   if (savedId && savedName) {
+
     currentUserId = savedId;
+
     const loginSection = document.getElementById("loginSection");
     const welcomeSection = document.getElementById("welcomeSection");
     const welcomeUser = document.getElementById("welcomeUser");
