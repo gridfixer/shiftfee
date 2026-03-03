@@ -491,7 +491,7 @@
             <label>จัดสรร</label>
             <!-- <input type="text" id="budgetAllocated" style="text-align: right;" oninput="formatBudgetInput(this)"
               onblur="calculateShiftPreview()"> -->
-            <input type="text" id="budgetAllocated" value="100000" style="text-align: right;"
+            <input type="text" id="budgetAllocated" value="100,000" style="text-align: right;"
               oninput="formatBudgetInput(this)" onblur="calculateShiftPreview()">
           </div>
 
@@ -772,7 +772,7 @@
     let holidays = [], employeeData = [];
     function reload() {
 
-      buildTable();   // ⭐ เพิ่มบรรทัดนี้ก่อนเลย
+      // buildTable();   // ⭐ เพิ่มบรรทัดนี้ก่อนเลย
 
       const btn = document.getElementById("btnCalc");
       btn.disabled = true;
