@@ -604,42 +604,34 @@
     // --- จุดที่ 2: แก้ไขฟังก์ชัน login เดิม ---
     async function login() {
 
-      const u = document.getElementById("username");
-      const p = document.getElementById("password");
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
 
-      console.log("กำลังส่งไป API...");
+      const result = await callAPI("checkLogin", {
+        username,
+        password
+      });
 
-      try {
+      if (result && result.success) {
 
-        const res = await callAPI("checkLogin", {
-          username: u.value,
-          password: p.value
-        });
+        currentUserId = result.userId;
 
-        console.log("API ตอบกลับ:", res);
+        // ✅ ต้องใช้ชื่อเดียวกับ window.onload
+        localStorage.setItem("app_userId", result.userId);
+        localStorage.setItem("app_userName", username);
 
-        if (res && res.success) {
+        // ซ่อน login
+        document.getElementById("loginSection").style.display = "none";
+        document.getElementById("welcomeSection").style.display = "flex";
+        document.getElementById("welcomeUser").innerText = username;
+        document.getElementById("mainContent").style.display = "block";
 
-          currentUserId = res.userId;
+        initDateDropdown();
+        buildTable();
+        reload();
 
-          localStorage.setItem("app_userId", res.userId);
-          localStorage.setItem("app_userName", u.value);
-
-          document.getElementById("loginSection").style.display = "none";
-          document.getElementById("welcomeSection").style.display = "flex";
-          document.getElementById("welcomeUser").innerText = u.value;
-          document.getElementById("mainContent").style.display = "block";
-
-          initDateDropdown();
-          buildTable();         // 2. สร้างตาราง
-          reload();
-
-        } else {
-          console.log("Login ไม่สำเร็จ");
-        }
-
-      } catch (err) {
-        console.error("Login Error:", err);
+      } else {
+        alert("เข้าสู่ระบบไม่สำเร็จ");
       }
     }
 
@@ -1616,6 +1608,20 @@
       if (typeof inheritJob === "function") inheritJob(selectElement);
       if (typeof calculateSummary === "function") calculateSummary();
     }
+
+    window.addEventListener("DOMContentLoaded", function () {
+      const savedUserId = localStorage.getItem("app_userId");
+      const savedUserName = localStorage.getItem("app_userName");
+      if (!savedUserId) return;
+      currentUserId = savedUserId;
+      document.getElementById("loginSection").style.display = "none";
+      document.getElementById("welcomeSection").style.display = "flex";
+      document.getElementById("mainContent").style.display = "block";
+      document.getElementById("welcomeUser").innerText = savedUserName;
+      initDateDropdown();
+      buildTable();
+      reload();   // ใช้ชื่อเดิมของคุณ
+    });
 
   </script>
 
