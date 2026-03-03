@@ -566,21 +566,27 @@
     
     // --- จุดเพิ่มที่ 1: ตรวจสอบสถานะตอนโหลดหน้าเว็บ (F5) ---
     let currentUserId = null;
-    window.onload = function () {
-      const savedId = localStorage.getItem("app_userId");   // ดึง ID จริงมาใช้ดึงข้อมูล
-      const savedName = localStorage.getItem("app_userName"); // ดึงชื่อมาแสดงผล
-      if (savedId && savedName) {
-        currentUserId = savedId; // คืนค่า ID ให้ระบบเพื่อใช้ reload()
-        document.getElementById("loginSection").style.display = "none";
-        document.getElementById("welcomeSection").style.display = "flex";
-        // แสดงชื่อผู้ใช้จากที่บันทึกไว้
-        document.getElementById("welcomeUser").innerText = savedName;
-        document.getElementById("mainContent").style.display = "block";
+window.onload = function () {
+  const savedId = localStorage.getItem("app_userId");
+  const savedName = localStorage.getItem("app_userName");
 
-        if (typeof initDateDropdown === "function") initDateDropdown();
-        reload(); // คราวนี้ reload จะได้ค่า currentUserId ที่เป็น ID จริงๆ ไม่ใช่ชื่อ
-      }
-    };
+  if (savedId && savedName) {
+    currentUserId = savedId;
+    const loginSection = document.getElementById("loginSection");
+    const welcomeSection = document.getElementById("welcomeSection");
+    const welcomeUser = document.getElementById("welcomeUser");
+    const mainContent = document.getElementById("mainContent");
+
+    if (loginSection) loginSection.style.display = "none";
+    if (welcomeSection) welcomeSection.style.display = "flex";
+    if (welcomeUser) welcomeUser.innerText = savedName;
+    if (mainContent) mainContent.style.display = "block";
+
+    if (typeof initDateDropdown === "function") initDateDropdown();
+
+    reload();
+  }
+};
 
     // --- จุดที่ 2: แก้ไขฟังก์ชัน login เดิม ---
     async function login() {
