@@ -762,187 +762,43 @@
     }
 
     let holidays = [], employeeData = [];
-    function reload() {
+async function reload() {
 
-      // buildTable();   // ⭐ เพิ่มบรรทัดนี้ก่อนเลย
+  if (!currentUserId) return;
 
-      const btn = document.getElementById("btnCalc");
-      btn.disabled = true;
-      btn.innerText = "กำลังคำนวณ...";
+  const year = parseInt(document.getElementById("year").value);
+  const month = parseInt(document.getElementById("month").value);
 
-      const y = parseInt(document.getElementById("year").value) - 543;
-      const m = parseInt(document.getElementById("month").value);
-      const needP = parseInt(document.getElementById("needP").value) || 1;
-      const needCH = parseInt(document.getElementById("needCH").value) || 1;
-      const dayS = parseInt(document.getElementById("dayShift").value) || 0;
-      const holiS = parseInt(document.getElementById("holiShift").value) || 0;
+  try {
 
-      const rows = document.getElementById("tbody").rows;
+    const result = await callAPI("getInitialData", {
+      userId: currentUserId,
+      year: year,
+      month: month
+    });
 
-      let empsP = [];
-      let empsCH = [];
+    console.log("Initial Data:", result);
 
-      // ===== แยกกลุ่มพนักงาน =====
-      for (let i = 0; i < rows.length; i++) {
+    // ✅ เก็บข้อมูลลงตัวแปร global
+    employeeData = result.employees || [];
+    holidays = result.holidays || [];
 
-        if (rows[i].id === "totalRow") continue;
+    // ✅ สร้างตารางใหม่ก่อน
+    buildTable();
 
-        const name = rows[i].cells[1].innerText.trim();
-        const salary = parseFloat(rows[i].cells[2].innerText.replace(/,/g, '')) || 0;
-        const jobSelect = rows[i].querySelector(".jobSelect");
-        const job = jobSelect ? jobSelect.value : "";
+    // ✅ หยอดข้อมูลลงตาราง
+    fillTableWithData(employeeData, result.schedule || []);
 
-        if (!name || salary <= 0 || !job) continue;
+    // ✅ คำนวณสรุป
+    calculateSummary();
 
-        const empObj = {
-          index: i,
-          name,
-          salary,
-          job,
-          count: 0,
-          quota: 0,
-          weeklyCount: new Array(6).fill(0)
-        };
+    // ✅ อัปเดตยอดทั้งปี
+    updateYearlyDisplay(currentUserId);
 
-        if (job === "พชง") empsP.push(empObj);
-        if (job === "ชชง") empsCH.push(empObj);
-      }
-
-      const daysInMonth = new Date(y, m, 0).getDate();
-
-      let dailyPlan = [];
-      let totalRequiredP = 0;
-      let totalRequiredCH = 0;
-
-      // ===== สร้างแผนเวรทั้งเดือน =====
-      for (let d = 1; d <= daysInMonth; d++) {
-
-        const isHoli = holidays.includes(d);
-
-        const shiftTypes =
-          isHoli
-            ? (holiS === 3 ? [1, 2, 3] : (holiS === 2 ? [2, 3] : [3]))
-            : (dayS === 2 ? [1, 3] : [3]);
-
-        shiftTypes.forEach(st => {
-
-          for (let i = 0; i < needP; i++) {
-            dailyPlan.push({ day: d, shift: st, job: "พชง" });
-            totalRequiredP++;
-          }
-
-          for (let i = 0; i < needCH; i++) {
-            dailyPlan.push({ day: d, shift: st, job: "ชชง" });
-            totalRequiredCH++;
-          }
-
-        });
-      }
-
-      const totalRequiredShifts = totalRequiredP + totalRequiredCH;
-      document.getElementById("targetShifts").innerText = totalRequiredShifts;
-
-      // ===== คำนวณโควตา =====
-      function calculateQuota(group, totalRequired) {
-
-        if (group.length === 0) return;
-
-        const sumInverse = group.reduce((acc, e) => acc + (1 / e.salary), 0);
-        let currentTotal = 0;
-
-        group.forEach(e => {
-          e.quota = Math.round(((1 / e.salary) / sumInverse) * totalRequired);
-          currentTotal += e.quota;
-        });
-
-        let diff = totalRequired - currentTotal;
-
-        if (diff > 0) {
-          group.sort((a, b) => a.salary - b.salary);
-          let i = 0;
-          while (diff > 0) {
-            group[i % group.length].quota++;
-            diff--;
-            i++;
-          }
-        }
-
-        if (diff < 0) {
-          group.sort((a, b) => b.salary - a.salary);
-          let i = 0;
-          while (diff < 0) {
-            if (group[i % group.length].quota > 0) {
-              group[i % group.length].quota--;
-              diff++;
-            }
-            i++;
-          }
-        }
-      }
-
-      calculateQuota(empsP, totalRequiredP);
-      calculateQuota(empsCH, totalRequiredCH);
-
-      // ===== ล้างตารางก่อนกระจาย =====
-      for (let r = 0; r < rows.length; r++) {
-        if (rows[r].id === "totalRow") continue;
-        for (let c = 4; c < rows[r].cells.length - 2; c++) {
-          rows[r].cells[c].innerText = "";
-        }
-      }
-
-      const firstDayOfMonth = new Date(y, m - 1, 1).getDay();
-      const allEmps = [...empsP, ...empsCH];
-
-      // สุ่มลำดับก่อนกระจาย
-      dailyPlan.sort(() => Math.random() - 0.5);
-
-      // ===== กระจายเวร =====
-      dailyPlan.forEach(plan => {
-
-        const weekIdx = Math.floor((plan.day + firstDayOfMonth - 1) / 7);
-
-        let candidates = allEmps.filter(e =>
-          e.job === plan.job &&
-          e.count < e.quota &&
-          e.weeklyCount[weekIdx] < 2
-        );
-
-        if (candidates.length === 0) {
-          candidates = allEmps.filter(e =>
-            e.job === plan.job &&
-            e.weeklyCount[weekIdx] < 2
-          );
-        }
-
-        if (candidates.length === 0) {
-          candidates = allEmps.filter(e => e.job === plan.job);
-        }
-
-        if (candidates.length === 0) return;
-
-        // เลือกคนที่เวรน้อยที่สุด
-        candidates.sort((a, b) => a.count - b.count);
-        const selected = candidates[0];
-
-        const row = rows[selected.index];
-        const cellIndex = 3 + plan.day;
-
-        if (row && row.cells[cellIndex]) {
-          row.cells[cellIndex].innerText = plan.shift;
-        }
-
-        selected.count++;
-        selected.weeklyCount[weekIdx]++;
-      });
-
-      // ===== คำนวณสรุปใหม่ =====
-      calculateSummary();
-
-      btn.disabled = false;
-      btn.innerText = "คำนวณเวร";
-    }
-
+  } catch (err) {
+    console.error(err);
+  }
+}
     // ฟังก์ชันหยอดข้อมูลลงตาราง (ตัวเต็ม)
     function fillTableWithData(employees, schedule) {
       const tableBody = document.getElementById("tbody");
