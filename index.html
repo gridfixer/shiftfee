@@ -592,36 +592,45 @@ window.onload = function () {
 };
 
     // --- จุดที่ 2: แก้ไขฟังก์ชัน login เดิม ---
-    async function login() {
-      const u = document.getElementById("username");
-      const p = document.getElementById("password");
-      u.style.border = "";
-      u.classList.remove("shake");
-    
-      const res = await callAPI("checkLogin", {
-        username: u.value,
-        password: p.value
-      });
-    
-      if (res.success) {
-        currentUserId = res.userId;
-    
-        localStorage.setItem("app_userId", res.userId);
-        localStorage.setItem("app_userName", u.value);
-    
-        document.getElementById("loginSection").style.display = "none";
-        document.getElementById("welcomeSection").style.display = "flex";
-        document.getElementById("welcomeUser").innerText = u.value;
-        document.getElementById("mainContent").style.display = "block";
-    
-        initDateDropdown();
-        reload();
-      } else {
-        u.style.border = "1px solid #dc2626";
-        u.classList.add("shake");
-        setTimeout(() => u.classList.remove("shake"), 300);
-      }
+async function login() {
+
+  const u = document.getElementById("username");
+  const p = document.getElementById("password");
+
+  console.log("กำลังส่งไป API...");
+
+  try {
+
+    const res = await callAPI("checkLogin", {
+      username: u.value,
+      password: p.value
+    });
+
+    console.log("API ตอบกลับ:", res);
+
+    if (res && res.success) {
+
+      currentUserId = res.userId;
+
+      localStorage.setItem("app_userId", res.userId);
+      localStorage.setItem("app_userName", u.value);
+
+      document.getElementById("loginSection").style.display = "none";
+      document.getElementById("welcomeSection").style.display = "flex";
+      document.getElementById("welcomeUser").innerText = u.value;
+      document.getElementById("mainContent").style.display = "block";
+
+      initDateDropdown();
+      reload();
+
+    } else {
+      console.log("Login ไม่สำเร็จ");
     }
+
+  } catch (err) {
+    console.error("Login Error:", err);
+  }
+}
 
     // --- จุดเพิ่มที่ 3: ฟังก์ชัน Logout ---
     function logout() {
