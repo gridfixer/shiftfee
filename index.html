@@ -1115,27 +1115,6 @@
       document.getElementById("tbody").oninput = calculateSummary;
     }
 
-    // 3. ฟังก์ชันเติมข้อมูล (Fix Error: fillTableData is defined)
-    // function fillTableData() {
-    //   const rows = document.getElementById("tbody").rows;
-    //   employeeData.forEach((emp, i) => {
-    //     if (!rows[i]) return;
-    //     rows[i].cells[1].innerText = emp.fullname;
-    //     rows[i].cells[2].innerText = Number(emp.salary).toLocaleString();
-    //     rows[i].querySelector(".jobSelect").value = emp.job || "";
-    //   });
-
-    //   const y = parseInt(document.getElementById("year").value) - 543, m = document.getElementById("month").value;
-    //   google.script.run.withSuccessHandler(sch => {
-    //     if (!sch) return;
-    //     sch.forEach(item => {
-    //       const idx = employeeData.findIndex(e => e.id == item.employeeId);
-    //       if (idx > -1) rows[idx].cells[3 + item.day].innerText = item.shift;
-    //     });
-    //     calculateSummary();
-    //   }).getSchedule(y, m, currentUserId);
-    // }
-
     // 4. ระบบเปลี่ยนตำแหน่งตามแถวบน (Inherit Job)
     function inheritJob(el) {
       const val = el.value;
@@ -1159,76 +1138,56 @@
     }
 
     function calculateSummary() {
-      try {
     
-        const tbody = document.getElementById("tbody");
-        if (!tbody) return;
+      const table = document.getElementById("scheduleTable");
+      const rows = table.querySelectorAll("tbody tr");
     
-        const rows = tbody.rows;
+      let grandTotalShifts = 0;
+      let grandTotalCost = 0;
     
-        let grandTotalShifts = 0;
-        let grandTotalCost = 0;
+      rows.forEach(row => {
     
-        for (let i = 0; i < rows.length; i++) {
+        let shiftCount = 0;
     
-          if (rows[i].id === "totalRow") continue;
+        // เริ่มคอลัมน์วันที่ (ปรับเลข 4 ให้ตรงกับตารางคุณ)
+        for (let c = 4; c < row.cells.length - 2; c++) {
     
-          const salary =
-            parseFloat(rows[i].cells[2].innerText.replace(/,/g, '')) || 0;
+          const input = row.cells[c].querySelector("input");
+          const val = input ? input.value.trim() : row.cells[c].innerText.trim();
     
-          let shiftCount = 0;
-    
-          // เริ่มคอลัมน์วันที่ที่ index 4
-          for (let d = 4; d < rows[i].cells.length - 2; d++) {
-            const val = rows[i].cells[d].innerText.trim();
-            if (val !== "" && !isNaN(val)) {
-              shiftCount += parseFloat(val);
-            }
+          // ✅ นับเฉพาะ 1 2 3
+          if (["1", "2", "3"].includes(val)) {
+            shiftCount++;
           }
-    
-          const cost = (salary / 30 / 7 * 8) * shiftCount;
-    
-          // แสดงผลรายแถว
-          rows[i].cells[rows[i].cells.length - 2].innerText = shiftCount;
-    
-          rows[i].cells[rows[i].cells.length - 1].innerText =
-            cost.toLocaleString("th-TH", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            });
-    
-          grandTotalShifts += shiftCount;
-          grandTotalCost += cost;
         }
     
-        // ===== แถวรวมด้านล่าง =====
-        document.getElementById("grandTotalShifts").innerText =
-          grandTotalShifts;
+        // เงินเดือน (สมมติอยู่คอลัมน์ที่ 3)
+        const salary = Number(row.cells[3].innerText) || 0;
     
-        document.getElementById("grandTotalCost").innerText =
-          grandTotalCost.toLocaleString("th-TH", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          });
+        const totalCost = shiftCount * salary;
     
-        // แสดงเดือนนี้ด้านบน
-        const statCost = document.getElementById("statCost");
-        if (statCost) {
-          statCost.innerText =
-            grandTotalCost.toLocaleString("th-TH", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            });
-        }
+        // ใส่ค่ากลับไปในคอลัมน์ท้ายตาราง
+        row.cells[row.cells.length - 2].innerText = shiftCount;
+        row.cells[row.cells.length - 1].innerText = totalCost.toLocaleString();
     
-        // 🔥 สำคัญมาก
-        if (currentUserId) {
-          updateYearlyDisplay(currentUserId);
-        }
+        grandTotalShifts += shiftCount;
+        grandTotalCost += totalCost;
+      });
     
-      } catch (err) {
-        console.error("calculateSummary error:", err);
+      // ===== รวมทั้งหมด =====
+      document.getElementById("totalShifts").innerText = grandTotalShifts;
+      document.getElementById("totalCost").innerText = grandTotalCost.toLocaleString();
+    
+      // ===== เปอร์เซ็นต์งบ =====
+      const budget = Number(document.getElementById("budget").innerText) || 0;
+    
+      let percent = 0;
+      if (budget > 0) {
+        percent = (grandTotalCost / budget) * 100;
       }
+    
+      document.getElementById("percentUsed").innerText =
+        percent.toFixed(2) + "%";
     }
 
     async function updateBudgetUI() {    
