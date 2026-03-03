@@ -705,7 +705,10 @@
         );
     
         // ===== แสดงยอดรวม =====
-        yearlyEl.innerText = yearlyTotal.toLocaleString("th-TH");
+        yearlyEl.innerText = yearlyTotal.toLocaleString("th-TH", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
     
         // ===== คำนวณเปอร์เซ็นต์ =====
         let percent = 0;
@@ -758,7 +761,7 @@
           month: m
         });
     
-        console.log("InitialData:", data);
+        // console.log("InitialData:", data);
     
         const s = data?.settings || {};
     
