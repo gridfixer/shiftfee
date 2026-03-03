@@ -697,6 +697,8 @@ async function updateYearlyDisplay(userId) {
       year: year
     });
 
+    console.log(result)
+
     const yearlyTotal = Number(result?.total || 0);
     const budget = Number(
       (budgetEl.value || "0").replace(/,/g, '')
