@@ -716,37 +716,69 @@
 
     let holidays = [], employeeData = [];
     async function reload() {
-      if (!currentUserId) return;
+      try {
+        if (!currentUserId) return;
     
-      const y = document.getElementById("year").value;
-      const m = document.getElementById("month").value;
-      
-      // costFromOtherMonths = 0;
-      const yearlyEl = document.getElementById("yearlyTotalCost");
-      const percentEl = document.getElementById("percentValue");
-      if (yearlyEl) yearlyEl.innerText = "...";
-      if (percentEl) percentEl.innerText = "...";
+        const yearEl = document.getElementById("year");
+        const monthEl = document.getElementById("month");
     
-      const data = await callAPI("getInitialData", {
-        userId: currentUserId,
-        year: y,
-        month: m
-      });
+        const y = yearEl ? yearEl.value : "";
+        const m = monthEl ? monthEl.value : "";
     
-      const s = data.settings || {};
+        // ===== Reset หน้าจอระหว่างโหลด =====
+        const yearlyEl = document.getElementById("yearlyTotalCost");
+        const percentEl = document.getElementById("percentValue");
     
-      document.getElementById("dayShift").value = s.day_shift || 0;
-      document.getElementById("holiShift").value = s.holi_shift || 0;
-      document.getElementById("needP").value = s.need_p || 0;
-      document.getElementById("needCH").value = s.need_ch || 0;
+        if (yearlyEl) yearlyEl.innerText = "...";
+        if (percentEl) percentEl.innerText = "...";
     
-      holidays = data.holidays || [];
-      employeeData = data.employees || [];
+        // ===== เรียก API =====
+        const data = await callAPI("getInitialData", {
+          userId: currentUserId,
+          year: y,
+          month: m
+        });
     
-      buildTable();
-      fillTableWithData(employeeData, data.schedule || []);
-      calculateSummary();
-      updateYearlyDisplay(currentUserId);
+        console.log("InitialData:", data);
+    
+        const s = data?.settings || {};
+    
+        // ===== ใส่ค่า Settings =====
+        const dayShiftEl = document.getElementById("dayShift");
+        const holiShiftEl = document.getElementById("holiShift");
+        const needPEl = document.getElementById("needP");
+        const needCHEl = document.getElementById("needCH");
+        const budgetEl = document.getElementById("budgetAllocated");
+    
+        if (dayShiftEl) dayShiftEl.value = s.day_shift ?? 0;
+        if (holiShiftEl) holiShiftEl.value = s.holi_shift ?? 0;
+        if (needPEl) needPEl.value = s.need_p ?? 0;
+        if (needCHEl) needCHEl.value = s.need_ch ?? 0;
+    
+        // ⭐ สำคัญ: ใส่งบประมาณ
+        if (budgetEl) {
+          budgetEl.value = Number(s.budget ?? 0).toLocaleString("th-TH");
+        }
+    
+        // ===== ข้อมูลหลัก =====
+        holidays = data?.holidays || [];
+        employeeData = data?.employees || [];
+        const schedule = data?.schedule || [];
+    
+        // ===== สร้างและเติมตาราง =====
+        buildTable();
+        fillTableWithData(employeeData, schedule);
+    
+        // ===== คำนวณสรุปเดือน =====
+        calculateSummary();
+    
+        // ===== อัปเดตยอดทั้งปี + เปอร์เซ็นต์ =====
+        await updateYearlyDisplay(currentUserId);
+    
+      } catch (err) {
+        console.error("Reload Error:", err);
+        alert("เกิดข้อผิดพลาดในการโหลดข้อมูล");
+      }
     }
 
     // ฟังก์ชันหยอดข้อมูลลงตาราง (ตัวเต็ม)
