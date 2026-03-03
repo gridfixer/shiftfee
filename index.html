@@ -432,12 +432,10 @@
   
   <div class="topbar">
     <div class="topbar-title">ระบบควบคุมค่าใช้จ่ายในการอยู่เวร StandBy</div>
-      <form id="loginSection" onsubmit="login(); return false;" autocomplete="on">
-        <input type="text" id="username" required autocomplete="username" placeholder="ชื่อผู้ใช้งาน">      
-        <input type="password" id="password" required autocomplete="current-password" placeholder="รหัสผ่าน">
-        <button type="submit">เข้าสู่ระบบ</button>
-      </form>
-    
+    <div id="loginSection" class="login-box">
+      <input id="username" placeholder="ชื่อผู้ใช้งาน">
+      <input type="password" id="password" placeholder="รหัสผ่าน">
+      <button onclick="login()">เข้าสู่ระบบ</button>
     </div>
 
     <div id="welcomeSection" style="display:none;">
@@ -572,9 +570,9 @@
       const savedName = localStorage.getItem("app_userName"); // ดึงชื่อมาแสดงผล
       if (savedId && savedName) {
         currentUserId = savedId; // คืนค่า ID ให้ระบบเพื่อใช้ reload()
-        const loginEl = document.getElementById("loginSection");
-        if (loginEl) loginEl.style.display = "none";
+        document.getElementById("loginSection").style.display = "none";
         document.getElementById("welcomeSection").style.display = "flex";
+        // แสดงชื่อผู้ใช้จากที่บันทึกไว้
         document.getElementById("welcomeUser").innerText = savedName;
         document.getElementById("mainContent").style.display = "block";
 
