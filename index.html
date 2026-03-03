@@ -1155,60 +1155,70 @@ async function updateYearlyDisplay(userId) {
     }
 
     function calculateSummary() {
-      try {    
-        const table = document.getElementById("expenseTable");
-        if (!table) return;
+      try {
     
-        const rows = table.querySelectorAll("tbody tr");
+        const tbody = document.getElementById("tbody");
+        if (!tbody) return;
     
-        let totalExpense = 0;
-        let totalIncome = 0;
+        const rows = tbody.rows;
     
-        rows.forEach(row => {
-          const typeCell = row.querySelector(".type");      // ประเภท (income / expense)
-          const amountCell = row.querySelector(".amount");  // จำนวนเงิน
+        let grandTotalShifts = 0;
+        let grandTotalCost = 0;
     
-          if (!typeCell || !amountCell) return;
+        for (let i = 0; i < rows.length; i++) {
     
-          const type = typeCell.innerText.trim().toLowerCase();
-          const amount = Number(
-            amountCell.innerText.replace(/,/g, '')
-          ) || 0;
+          if (rows[i].id === "totalRow") continue;
     
-          if (type === "income") {
-            totalIncome += amount;
-          } else {
-            totalExpense += amount;
+          const salary =
+            parseFloat(rows[i].cells[2].innerText.replace(/,/g, '')) || 0;
+    
+          let shiftCount = 0;
+    
+          // เริ่มคอลัมน์วันที่ที่ index 4
+          for (let d = 4; d < rows[i].cells.length - 2; d++) {
+            const val = rows[i].cells[d].innerText.trim();
+            if (val !== "" && !isNaN(val)) {
+              shiftCount += parseFloat(val);
+            }
           }
-        });
     
-        const netTotal = totalIncome - totalExpense;
+          const cost = (salary / 30 / 7 * 8) * shiftCount;
     
-        // ===== แสดงผลรวมรายเดือน =====
-        const totalIncomeEl = document.getElementById("totalIncome");
-        const totalExpenseEl = document.getElementById("totalExpense");
-        const netTotalEl = document.getElementById("netTotal");
+          // แสดงผลรายแถว
+          rows[i].cells[rows[i].cells.length - 2].innerText = shiftCount;
     
-        if (totalIncomeEl)
-          totalIncomeEl.innerText = totalIncome.toLocaleString("th-TH", {
+          rows[i].cells[rows[i].cells.length - 1].innerText =
+            cost.toLocaleString("th-TH", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            });
+    
+          grandTotalShifts += shiftCount;
+          grandTotalCost += cost;
+        }
+    
+        // ===== แถวรวมด้านล่าง =====
+        document.getElementById("grandTotalShifts").innerText =
+          grandTotalShifts;
+    
+        document.getElementById("grandTotalCost").innerText =
+          grandTotalCost.toLocaleString("th-TH", {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
           });
     
-        if (totalExpenseEl)
-          totalExpenseEl.innerText = totalExpense.toLocaleString("th-TH", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          });
+        // แสดงเดือนนี้ด้านบน
+        const statCost = document.getElementById("statCost");
+        if (statCost) {
+          statCost.innerText =
+            grandTotalCost.toLocaleString("th-TH", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            });
+        }
     
-        if (netTotalEl)
-          netTotalEl.innerText = netTotal.toLocaleString("th-TH", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          });
-    
-        // 🔥 สำคัญ — อัปเดตยอดทั้งปีใหม่หลังคำนวณเดือน
-        if (typeof currentUserId !== "undefined") {
+        // 🔥 สำคัญมาก
+        if (currentUserId) {
           updateYearlyDisplay(currentUserId);
         }
     
