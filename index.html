@@ -4,6 +4,9 @@
 <head>
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400&display=swap" rel="stylesheet">
 
@@ -433,11 +436,17 @@
       <input id="username" placeholder="ชื่อผู้ใช้งาน">
       <input type="password" id="password" placeholder="รหัสผ่าน">
       <button onclick="login()">เข้าสู่ระบบ</button> -->
-      <form onsubmit="login(); return false;">
+      <!-- <form onsubmit="login(); return false;">
         <input type="text" id="username" required>
         <input type="password" id="password" required>
         <button type="submit">เข้าสู่ระบบ</button>
+      </form> -->
+      <form onsubmit="login(); return false;" autocomplete="on">
+        <input type="text" id="username" required autocomplete="username" placeholder="ชื่อผู้ใช้งาน">      
+        <input type="password" id="password" required autocomplete="current-password" placeholder="รหัสผ่าน">
+        <button type="submit">เข้าสู่ระบบ</button>
       </form>
+    
     </div>
 
     <div id="welcomeSection" style="display:none;">
