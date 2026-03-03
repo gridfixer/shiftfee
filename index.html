@@ -682,22 +682,40 @@
 
     // let costFromOtherMonths = 0; // ตัวแปรเก็บยอดรวมของเดือนอื่นๆ ในปีนั้น
     async function updateYearlyDisplay(userId) {
-      const year = document.getElementById("year").value;
       try {
-        const res = await callAPI("getYearlyTotal", {
-          userId,
-          year
-        });    
-        const total = parseFloat(res.total) || 0;    
-        document.getElementById("yearlyTotalCost").innerText =
-          total.toLocaleString('th-TH', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          });    
-        calculateSummary();
+    
+        const year = document.getElementById("year")?.value;
+    
+        const yearlyEl = document.getElementById("yearlyTotalCost");
+        const percentEl = document.getElementById("percentValue");
+        const budgetEl = document.getElementById("budgetAllocated");
+    
+        if (!yearlyEl || !percentEl || !budgetEl) return;
+    
+        // ===== เรียก API ดึงยอดรวมทั้งปี =====
+        const result = await callAPI("getYearlyTotalCost", {
+          userId: userId,
+          year: year
+        });
+    
+        const yearlyTotal = Number(result?.total || 0);
+        const budget = Number(
+          (budgetEl.value || "0").replace(/,/g, '')
+        );
+    
+        // ===== แสดงยอดรวม =====
+        yearlyEl.innerText = yearlyTotal.toLocaleString("th-TH");
+    
+        // ===== คำนวณเปอร์เซ็นต์ =====
+        let percent = 0;
+        if (budget > 0) {
+          percent = (yearlyTotal / budget) * 100;
+        }
+    
+        percentEl.innerText = percent.toFixed(2) + "%";
     
       } catch (err) {
-        console.error(err);
+        console.error("Yearly Display Error:", err);
       }
     }
     
