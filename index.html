@@ -587,7 +587,6 @@ window.onload = function () {
 
     if (typeof initDateDropdown === "function") initDateDropdown();
 
-    reload();
   }
 };
 
@@ -1273,58 +1272,70 @@ function reload() {
 function calculateSummary() {
 
   const table = document.getElementById("scheduleTable");
+  if (!table) return;
+
   const rows = table.querySelectorAll("tbody tr");
+  if (!rows || rows.length === 0) return; // ⭐ ป้องกันพังตรงนี้
 
   let grandTotalShifts = 0;
   let grandTotalCost = 0;
 
-  // ===== เตรียมตัวแปรรวมรายวัน =====
   const firstRow = rows[0];
+  if (!firstRow || !firstRow.cells || firstRow.cells.length < 6) return;
+
   const dayStart = 4;
   const dayEnd = firstRow.cells.length - 2;
   const dailyTotals = new Array(dayEnd - dayStart).fill(0);
 
   rows.forEach(row => {
 
-    if (row.id === "totalRow") return;
+    if (!row || row.id === "totalRow") return;
 
     let shiftCount = 0;
 
-    // ===== วนแต่ละวัน =====
     for (let c = dayStart; c < dayEnd; c++) {
+
+      if (!row.cells[c]) continue;
 
       const val = row.cells[c].innerText.trim();
 
       if (["1", "2", "3"].includes(val)) {
         shiftCount++;
-        dailyTotals[c - dayStart]++; // ← เพิ่มยอดรายวัน
+        dailyTotals[c - dayStart]++;
       }
     }
 
+    const salaryCell = row.cells[2];
+    if (!salaryCell) return;
+
     const salary = parseFloat(
-      row.cells[2].innerText.replace(/,/g, '')
+      salaryCell.innerText.replace(/,/g, '')
     ) || 0;
 
     const costPerShift = (salary / 30 / 7 * 8);
     const totalCost = costPerShift * shiftCount;
 
-    row.cells[row.cells.length - 2].innerText = shiftCount;
-    row.cells[row.cells.length - 1].innerText =
-      totalCost.toLocaleString("th-TH", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
+    if (row.cells[row.cells.length - 2])
+      row.cells[row.cells.length - 2].innerText = shiftCount;
+
+    if (row.cells[row.cells.length - 1])
+      row.cells[row.cells.length - 1].innerText =
+        totalCost.toLocaleString("th-TH", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
 
     grandTotalShifts += shiftCount;
     grandTotalCost += totalCost;
   });
 
-  // ===== ใส่ยอดรวมรายวันลง totalRow =====
   const totalRow = document.getElementById("totalRow");
 
-  if (totalRow) {
+  if (totalRow && totalRow.cells.length >= dayEnd) {
+
     for (let c = dayStart; c < dayEnd; c++) {
-      totalRow.cells[c].innerText = dailyTotals[c - dayStart];
+      if (totalRow.cells[c])
+        totalRow.cells[c].innerText = dailyTotals[c - dayStart];
     }
 
     totalRow.cells[totalRow.cells.length - 2].innerText = grandTotalShifts;
@@ -1335,7 +1346,6 @@ function calculateSummary() {
       });
   }
 
-  // ===== อัปเดตการ์ดด้านบน =====
   const statShiftEl = document.getElementById("statShifts");
   const statCostEl = document.getElementById("statCost");
 
@@ -1347,7 +1357,6 @@ function calculateSummary() {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       });
-
 }
 
 
