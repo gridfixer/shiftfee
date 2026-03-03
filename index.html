@@ -4,7 +4,7 @@
 <head>
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400&display=swap" rel="stylesheet">
@@ -429,19 +429,25 @@
 </head>
 
 <body>
-  
+
   <div class="topbar">
     <div class="topbar-title">ระบบควบคุมค่าใช้จ่ายในการอยู่เวร StandBy</div>
-    <div id="loginSection" class="login-box">
+    <!-- <div id="loginSection" class="login-box">
       <input id="username" placeholder="ชื่อผู้ใช้งาน">
       <input type="password" id="password" placeholder="รหัสผ่าน">
       <button onclick="login()">เข้าสู่ระบบ</button>
-    </div>
+    </div> -->
+    <form id="loginSection" class="login-box" onsubmit="event.preventDefault(); login();">
+      <input id="username" placeholder="ชื่อผู้ใช้งาน">
+      <input type="password" id="password" placeholder="รหัสผ่าน">
+      <button type="submit">เข้าสู่ระบบ</button>
+    </form>
 
     <div id="welcomeSection" style="display:none;">
       <span>ยินดีต้อนรับ <span id="welcomeUser"></span></span>
       <button onclick="logout()" class="btn-logout-minimal" title="ออกจากระบบ">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
           <polyline points="16 17 21 12 16 7"></polyline>
           <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -483,8 +489,8 @@
         <div class="cardBody">
           <div class="formRow">
             <label>จัดสรร</label>
-            <input type="text" id="budgetAllocated" style="text-align: right;"
-             oninput="formatBudgetInput(this)" onblur="calculateShiftPreview()">
+            <input type="text" id="budgetAllocated" style="text-align: right;" oninput="formatBudgetInput(this)"
+              onblur="calculateShiftPreview()">
           </div>
 
           <div class="formRow">
@@ -549,7 +555,7 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbyPBa8fWtxQBlfoooFwWdIKoLOLRkGw4fisbJUTphk0BHjPtEK-Y6qqp6mI-Jn5Xoxv/exec";
 
     async function callAPI(action, payload) {
-    
+
       const response = await fetch(API_URL, {
         method: "POST",
         headers: {
@@ -560,76 +566,76 @@
           payload
         })
       });
-    
+
       return await response.json();
     }
-    
+
     // --- จุดเพิ่มที่ 1: ตรวจสอบสถานะตอนโหลดหน้าเว็บ (F5) ---
     let currentUserId = null;
-window.onload = function () {
+    window.onload = function () {
 
-  const savedId = localStorage.getItem("app_userId");
-  const savedName = localStorage.getItem("app_userName");
+      const savedId = localStorage.getItem("app_userId");
+      const savedName = localStorage.getItem("app_userName");
 
-  if (savedId && savedName) {
+      if (savedId && savedName) {
 
-    currentUserId = savedId;
+        currentUserId = savedId;
 
-    const loginSection = document.getElementById("loginSection");
-    const welcomeSection = document.getElementById("welcomeSection");
-    const welcomeUser = document.getElementById("welcomeUser");
-    const mainContent = document.getElementById("mainContent");
+        const loginSection = document.getElementById("loginSection");
+        const welcomeSection = document.getElementById("welcomeSection");
+        const welcomeUser = document.getElementById("welcomeUser");
+        const mainContent = document.getElementById("mainContent");
 
-    if (loginSection) loginSection.style.display = "none";
-    if (welcomeSection) welcomeSection.style.display = "flex";
-    if (welcomeUser) welcomeUser.innerText = savedName;
-    if (mainContent) mainContent.style.display = "block";
+        if (loginSection) loginSection.style.display = "none";
+        if (welcomeSection) welcomeSection.style.display = "flex";
+        if (welcomeUser) welcomeUser.innerText = savedName;
+        if (mainContent) mainContent.style.display = "block";
 
-    if (typeof initDateDropdown === "function") initDateDropdown();
+        if (typeof initDateDropdown === "function") initDateDropdown();
 
-  }
-};
+      }
+    };
 
     // --- จุดที่ 2: แก้ไขฟังก์ชัน login เดิม ---
-async function login() {
+    async function login() {
 
-  const u = document.getElementById("username");
-  const p = document.getElementById("password");
+      const u = document.getElementById("username");
+      const p = document.getElementById("password");
 
-  console.log("กำลังส่งไป API...");
+      console.log("กำลังส่งไป API...");
 
-  try {
+      try {
 
-    const res = await callAPI("checkLogin", {
-      username: u.value,
-      password: p.value
-    });
+        const res = await callAPI("checkLogin", {
+          username: u.value,
+          password: p.value
+        });
 
-    console.log("API ตอบกลับ:", res);
+        console.log("API ตอบกลับ:", res);
 
-    if (res && res.success) {
+        if (res && res.success) {
 
-      currentUserId = res.userId;
+          currentUserId = res.userId;
 
-      localStorage.setItem("app_userId", res.userId);
-      localStorage.setItem("app_userName", u.value);
+          localStorage.setItem("app_userId", res.userId);
+          localStorage.setItem("app_userName", u.value);
 
-      document.getElementById("loginSection").style.display = "none";
-      document.getElementById("welcomeSection").style.display = "flex";
-      document.getElementById("welcomeUser").innerText = u.value;
-      document.getElementById("mainContent").style.display = "block";
+          document.getElementById("loginSection").style.display = "none";
+          document.getElementById("welcomeSection").style.display = "flex";
+          document.getElementById("welcomeUser").innerText = u.value;
+          document.getElementById("mainContent").style.display = "block";
 
-      initDateDropdown();
-      reload();
+          initDateDropdown();
+          reload();
 
-    } else {
-      console.log("Login ไม่สำเร็จ");
+        } else {
+          console.log("Login ไม่สำเร็จ");
+        }
+
+      } catch (err) {
+        console.error("Login Error:", err);
+      }
     }
-
-  } catch (err) {
-    console.error("Login Error:", err);
-  }
-}
 
     // --- จุดเพิ่มที่ 3: ฟังก์ชัน Logout ---
     function logout() {
@@ -645,7 +651,11 @@ async function login() {
       document.getElementById("year").innerHTML = `<option value="${curY}">${curY}</option>`;
       const mNames = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
       document.getElementById("month").innerHTML = mNames.map((m, i) => `<option value="${i + 1}" ${i + 1 === curM ? 'selected' : ''}>${m}</option>`).join('');
-      document.getElementById("month").onchange = reload;
+      // document.getElementById("month").onchange = reload;
+      document.getElementById("month").onchange = function () {
+        buildTable();
+        reload();
+      };
     }
 
     // ฟังก์ชันช่วยดึงค่าปัจจุบันจากหน้าจอมาทำเป็น Object
@@ -701,45 +711,45 @@ async function login() {
     // let costFromOtherMonths = 0; // ตัวแปรเก็บยอดรวมของเดือนอื่นๆ ในปีนั้น
     async function updateYearlyDisplay(userId) {
       try {
-    
+
         const year = document.getElementById("year")?.value;
         const yearlyEl = document.getElementById("yearlyTotalCost");
         const percentEl = document.getElementById("percentValue");
         const budgetEl = document.getElementById("budgetAllocated");
-    
+
         if (!yearlyEl || !percentEl || !budgetEl) return;
-    
+
         const result = await callAPI("getYearlyTotal", {
           userId: userId,
           year: year
         });
-    
+
         console.log("Yearly API:", result);
-    
+
         // ✅ ตรงนี้คือจุดแก้
         const yearlyTotal = Number(result || 0);
-    
+
         const budget = Number(
           (budgetEl.value || "0").replace(/,/g, '')
         );
-    
+
         yearlyEl.innerText = yearlyTotal.toLocaleString("th-TH", {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2
         });
-    
+
         let percent = 0;
         if (budget > 0) {
           percent = (yearlyTotal / budget) * 100;
         }
-    
+
         percentEl.innerText = percent.toFixed(2);
-    
+
       } catch (err) {
         console.error("Yearly Display Error:", err);
       }
     }
-    
+
     function formatBudgetInput(el) {
       let value = el.value.replace(/,/g, '');
       if (value === '') {
@@ -754,184 +764,186 @@ async function login() {
     }
 
     let holidays = [], employeeData = [];
-function reload() {
+    function reload() {
 
-  const btn = document.getElementById("btnCalc");
-  btn.disabled = true;
-  btn.innerText = "กำลังคำนวณ...";
+      buildTable();   // ⭐ เพิ่มบรรทัดนี้ก่อนเลย
 
-  const y = parseInt(document.getElementById("year").value) - 543;
-  const m = parseInt(document.getElementById("month").value);
-  const needP = parseInt(document.getElementById("needP").value) || 1;
-  const needCH = parseInt(document.getElementById("needCH").value) || 1;
-  const dayS = parseInt(document.getElementById("dayShift").value) || 0;
-  const holiS = parseInt(document.getElementById("holiShift").value) || 0;
+      const btn = document.getElementById("btnCalc");
+      btn.disabled = true;
+      btn.innerText = "กำลังคำนวณ...";
 
-  const rows = document.getElementById("tbody").rows;
+      const y = parseInt(document.getElementById("year").value) - 543;
+      const m = parseInt(document.getElementById("month").value);
+      const needP = parseInt(document.getElementById("needP").value) || 1;
+      const needCH = parseInt(document.getElementById("needCH").value) || 1;
+      const dayS = parseInt(document.getElementById("dayShift").value) || 0;
+      const holiS = parseInt(document.getElementById("holiShift").value) || 0;
 
-  let empsP = [];
-  let empsCH = [];
+      const rows = document.getElementById("tbody").rows;
 
-  // ===== แยกกลุ่มพนักงาน =====
-  for (let i = 0; i < rows.length; i++) {
+      let empsP = [];
+      let empsCH = [];
 
-    if (rows[i].id === "totalRow") continue;
+      // ===== แยกกลุ่มพนักงาน =====
+      for (let i = 0; i < rows.length; i++) {
 
-    const name = rows[i].cells[1].innerText.trim();
-    const salary = parseFloat(rows[i].cells[2].innerText.replace(/,/g, '')) || 0;
-    const jobSelect = rows[i].querySelector(".jobSelect");
-    const job = jobSelect ? jobSelect.value : "";
+        if (rows[i].id === "totalRow") continue;
 
-    if (!name || salary <= 0 || !job) continue;
+        const name = rows[i].cells[1].innerText.trim();
+        const salary = parseFloat(rows[i].cells[2].innerText.replace(/,/g, '')) || 0;
+        const jobSelect = rows[i].querySelector(".jobSelect");
+        const job = jobSelect ? jobSelect.value : "";
 
-    const empObj = {
-      index: i,
-      name,
-      salary,
-      job,
-      count: 0,
-      quota: 0,
-      weeklyCount: new Array(6).fill(0)
-    };
+        if (!name || salary <= 0 || !job) continue;
 
-    if (job === "พชง") empsP.push(empObj);
-    if (job === "ชชง") empsCH.push(empObj);
-  }
+        const empObj = {
+          index: i,
+          name,
+          salary,
+          job,
+          count: 0,
+          quota: 0,
+          weeklyCount: new Array(6).fill(0)
+        };
 
-  const daysInMonth = new Date(y, m, 0).getDate();
-
-  let dailyPlan = [];
-  let totalRequiredP = 0;
-  let totalRequiredCH = 0;
-
-  // ===== สร้างแผนเวรทั้งเดือน =====
-  for (let d = 1; d <= daysInMonth; d++) {
-
-    const isHoli = holidays.includes(d);
-
-    const shiftTypes =
-      isHoli
-        ? (holiS === 3 ? [1, 2, 3] : (holiS === 2 ? [2, 3] : [3]))
-        : (dayS === 2 ? [1, 3] : [3]);
-
-    shiftTypes.forEach(st => {
-
-      for (let i = 0; i < needP; i++) {
-        dailyPlan.push({ day: d, shift: st, job: "พชง" });
-        totalRequiredP++;
+        if (job === "พชง") empsP.push(empObj);
+        if (job === "ชชง") empsCH.push(empObj);
       }
 
-      for (let i = 0; i < needCH; i++) {
-        dailyPlan.push({ day: d, shift: st, job: "ชชง" });
-        totalRequiredCH++;
+      const daysInMonth = new Date(y, m, 0).getDate();
+
+      let dailyPlan = [];
+      let totalRequiredP = 0;
+      let totalRequiredCH = 0;
+
+      // ===== สร้างแผนเวรทั้งเดือน =====
+      for (let d = 1; d <= daysInMonth; d++) {
+
+        const isHoli = holidays.includes(d);
+
+        const shiftTypes =
+          isHoli
+            ? (holiS === 3 ? [1, 2, 3] : (holiS === 2 ? [2, 3] : [3]))
+            : (dayS === 2 ? [1, 3] : [3]);
+
+        shiftTypes.forEach(st => {
+
+          for (let i = 0; i < needP; i++) {
+            dailyPlan.push({ day: d, shift: st, job: "พชง" });
+            totalRequiredP++;
+          }
+
+          for (let i = 0; i < needCH; i++) {
+            dailyPlan.push({ day: d, shift: st, job: "ชชง" });
+            totalRequiredCH++;
+          }
+
+        });
       }
 
-    });
-  }
+      const totalRequiredShifts = totalRequiredP + totalRequiredCH;
+      document.getElementById("targetShifts").innerText = totalRequiredShifts;
 
-  const totalRequiredShifts = totalRequiredP + totalRequiredCH;
-  document.getElementById("targetShifts").innerText = totalRequiredShifts;
+      // ===== คำนวณโควตา =====
+      function calculateQuota(group, totalRequired) {
 
-  // ===== คำนวณโควตา =====
-  function calculateQuota(group, totalRequired) {
+        if (group.length === 0) return;
 
-    if (group.length === 0) return;
+        const sumInverse = group.reduce((acc, e) => acc + (1 / e.salary), 0);
+        let currentTotal = 0;
 
-    const sumInverse = group.reduce((acc, e) => acc + (1 / e.salary), 0);
-    let currentTotal = 0;
+        group.forEach(e => {
+          e.quota = Math.round(((1 / e.salary) / sumInverse) * totalRequired);
+          currentTotal += e.quota;
+        });
 
-    group.forEach(e => {
-      e.quota = Math.round(((1 / e.salary) / sumInverse) * totalRequired);
-      currentTotal += e.quota;
-    });
+        let diff = totalRequired - currentTotal;
 
-    let diff = totalRequired - currentTotal;
-
-    if (diff > 0) {
-      group.sort((a, b) => a.salary - b.salary);
-      let i = 0;
-      while (diff > 0) {
-        group[i % group.length].quota++;
-        diff--;
-        i++;
-      }
-    }
-
-    if (diff < 0) {
-      group.sort((a, b) => b.salary - a.salary);
-      let i = 0;
-      while (diff < 0) {
-        if (group[i % group.length].quota > 0) {
-          group[i % group.length].quota--;
-          diff++;
+        if (diff > 0) {
+          group.sort((a, b) => a.salary - b.salary);
+          let i = 0;
+          while (diff > 0) {
+            group[i % group.length].quota++;
+            diff--;
+            i++;
+          }
         }
-        i++;
+
+        if (diff < 0) {
+          group.sort((a, b) => b.salary - a.salary);
+          let i = 0;
+          while (diff < 0) {
+            if (group[i % group.length].quota > 0) {
+              group[i % group.length].quota--;
+              diff++;
+            }
+            i++;
+          }
+        }
       }
+
+      calculateQuota(empsP, totalRequiredP);
+      calculateQuota(empsCH, totalRequiredCH);
+
+      // ===== ล้างตารางก่อนกระจาย =====
+      for (let r = 0; r < rows.length; r++) {
+        if (rows[r].id === "totalRow") continue;
+        for (let c = 4; c < rows[r].cells.length - 2; c++) {
+          rows[r].cells[c].innerText = "";
+        }
+      }
+
+      const firstDayOfMonth = new Date(y, m - 1, 1).getDay();
+      const allEmps = [...empsP, ...empsCH];
+
+      // สุ่มลำดับก่อนกระจาย
+      dailyPlan.sort(() => Math.random() - 0.5);
+
+      // ===== กระจายเวร =====
+      dailyPlan.forEach(plan => {
+
+        const weekIdx = Math.floor((plan.day + firstDayOfMonth - 1) / 7);
+
+        let candidates = allEmps.filter(e =>
+          e.job === plan.job &&
+          e.count < e.quota &&
+          e.weeklyCount[weekIdx] < 2
+        );
+
+        if (candidates.length === 0) {
+          candidates = allEmps.filter(e =>
+            e.job === plan.job &&
+            e.weeklyCount[weekIdx] < 2
+          );
+        }
+
+        if (candidates.length === 0) {
+          candidates = allEmps.filter(e => e.job === plan.job);
+        }
+
+        if (candidates.length === 0) return;
+
+        // เลือกคนที่เวรน้อยที่สุด
+        candidates.sort((a, b) => a.count - b.count);
+        const selected = candidates[0];
+
+        const row = rows[selected.index];
+        const cellIndex = 3 + plan.day;
+
+        if (row && row.cells[cellIndex]) {
+          row.cells[cellIndex].innerText = plan.shift;
+        }
+
+        selected.count++;
+        selected.weeklyCount[weekIdx]++;
+      });
+
+      // ===== คำนวณสรุปใหม่ =====
+      calculateSummary();
+
+      btn.disabled = false;
+      btn.innerText = "คำนวณเวร";
     }
-  }
-
-  calculateQuota(empsP, totalRequiredP);
-  calculateQuota(empsCH, totalRequiredCH);
-
-  // ===== ล้างตารางก่อนกระจาย =====
-  for (let r = 0; r < rows.length; r++) {
-    if (rows[r].id === "totalRow") continue;
-    for (let c = 4; c < rows[r].cells.length - 2; c++) {
-      rows[r].cells[c].innerText = "";
-    }
-  }
-
-  const firstDayOfMonth = new Date(y, m - 1, 1).getDay();
-  const allEmps = [...empsP, ...empsCH];
-
-  // สุ่มลำดับก่อนกระจาย
-  dailyPlan.sort(() => Math.random() - 0.5);
-
-  // ===== กระจายเวร =====
-  dailyPlan.forEach(plan => {
-
-    const weekIdx = Math.floor((plan.day + firstDayOfMonth - 1) / 7);
-
-    let candidates = allEmps.filter(e =>
-      e.job === plan.job &&
-      e.count < e.quota &&
-      e.weeklyCount[weekIdx] < 2
-    );
-
-    if (candidates.length === 0) {
-      candidates = allEmps.filter(e =>
-        e.job === plan.job &&
-        e.weeklyCount[weekIdx] < 2
-      );
-    }
-
-    if (candidates.length === 0) {
-      candidates = allEmps.filter(e => e.job === plan.job);
-    }
-
-    if (candidates.length === 0) return;
-
-    // เลือกคนที่เวรน้อยที่สุด
-    candidates.sort((a, b) => a.count - b.count);
-    const selected = candidates[0];
-
-    const row = rows[selected.index];
-    const cellIndex = 3 + plan.day;
-
-    if (row && row.cells[cellIndex]) {
-      row.cells[cellIndex].innerText = plan.shift;
-    }
-
-    selected.count++;
-    selected.weeklyCount[weekIdx]++;
-  });
-
-  // ===== คำนวณสรุปใหม่ =====
-  calculateSummary();
-
-  btn.disabled = false;
-  btn.innerText = "คำนวณเวร";
-}
 
     // ฟังก์ชันหยอดข้อมูลลงตาราง (ตัวเต็ม)
     function fillTableWithData(employees, schedule) {
@@ -1157,7 +1169,7 @@ function reload() {
 
       // ===== ส่งไป Server =====
       try {
-      
+
         await callAPI("saveAllData", {
           userId: currentUserId,
           userSettings,
@@ -1166,27 +1178,27 @@ function reload() {
           year,
           month
         });
-      
+
         if (btn) {
           btn.disabled = false;
           btn.innerText = "บันทึกข้อมูล";
         }
-      
+
         reload();
-      
+
       } catch (err) {
-      
+
         alert("เกิดข้อผิดพลาด: " + err.message);
-      
+
         if (btn) {
           btn.disabled = false;
           btn.innerText = "บันทึกข้อมูล";
         }
-      
+
       }
     }
 
-    
+
 
     // 2. สร้างตาราง (ตำแหน่งเริ่มต้นเป็นค่าว่าง)
     function buildTable() {
@@ -1268,112 +1280,112 @@ function reload() {
     }
 
 
-    
-function calculateSummary() {
 
-  const table = document.getElementById("scheduleTable");
-  if (!table) return;
+    function calculateSummary() {
 
-  const rows = table.querySelectorAll("tbody tr");
-  if (!rows || rows.length === 0) return; // ⭐ ป้องกันพังตรงนี้
+      const table = document.getElementById("scheduleTable");
+      if (!table) return;
 
-  let grandTotalShifts = 0;
-  let grandTotalCost = 0;
+      const rows = table.querySelectorAll("tbody tr");
+      if (!rows || rows.length === 0) return; // ⭐ ป้องกันพังตรงนี้
 
-  const firstRow = rows[0];
-  if (!firstRow || !firstRow.cells || firstRow.cells.length < 6) return;
+      let grandTotalShifts = 0;
+      let grandTotalCost = 0;
 
-  const dayStart = 4;
-  const dayEnd = firstRow.cells.length - 2;
-  const dailyTotals = new Array(dayEnd - dayStart).fill(0);
+      const firstRow = rows[0];
+      if (!firstRow || !firstRow.cells || firstRow.cells.length < 6) return;
 
-  rows.forEach(row => {
+      const dayStart = 4;
+      const dayEnd = firstRow.cells.length - 2;
+      const dailyTotals = new Array(dayEnd - dayStart).fill(0);
 
-    if (!row || row.id === "totalRow") return;
+      rows.forEach(row => {
 
-    let shiftCount = 0;
+        if (!row || row.id === "totalRow") return;
 
-    for (let c = dayStart; c < dayEnd; c++) {
+        let shiftCount = 0;
 
-      if (!row.cells[c]) continue;
+        for (let c = dayStart; c < dayEnd; c++) {
 
-      const val = row.cells[c].innerText.trim();
+          if (!row.cells[c]) continue;
 
-      if (["1", "2", "3"].includes(val)) {
-        shiftCount++;
-        dailyTotals[c - dayStart]++;
+          const val = row.cells[c].innerText.trim();
+
+          if (["1", "2", "3"].includes(val)) {
+            shiftCount++;
+            dailyTotals[c - dayStart]++;
+          }
+        }
+
+        const salaryCell = row.cells[2];
+        if (!salaryCell) return;
+
+        const salary = parseFloat(
+          salaryCell.innerText.replace(/,/g, '')
+        ) || 0;
+
+        const costPerShift = (salary / 30 / 7 * 8);
+        const totalCost = costPerShift * shiftCount;
+
+        if (row.cells[row.cells.length - 2])
+          row.cells[row.cells.length - 2].innerText = shiftCount;
+
+        if (row.cells[row.cells.length - 1])
+          row.cells[row.cells.length - 1].innerText =
+            totalCost.toLocaleString("th-TH", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            });
+
+        grandTotalShifts += shiftCount;
+        grandTotalCost += totalCost;
+      });
+
+      const totalRow = document.getElementById("totalRow");
+
+      if (totalRow && totalRow.cells.length >= dayEnd) {
+
+        for (let c = dayStart; c < dayEnd; c++) {
+          if (totalRow.cells[c])
+            totalRow.cells[c].innerText = dailyTotals[c - dayStart];
+        }
+
+        totalRow.cells[totalRow.cells.length - 2].innerText = grandTotalShifts;
+        totalRow.cells[totalRow.cells.length - 1].innerText =
+          grandTotalCost.toLocaleString("th-TH", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          });
       }
+
+      const statShiftEl = document.getElementById("statShifts");
+      const statCostEl = document.getElementById("statCost");
+
+      if (statShiftEl) statShiftEl.innerText = grandTotalShifts;
+
+      if (statCostEl)
+        statCostEl.innerText =
+          grandTotalCost.toLocaleString("th-TH", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          });
     }
 
-    const salaryCell = row.cells[2];
-    if (!salaryCell) return;
-
-    const salary = parseFloat(
-      salaryCell.innerText.replace(/,/g, '')
-    ) || 0;
-
-    const costPerShift = (salary / 30 / 7 * 8);
-    const totalCost = costPerShift * shiftCount;
-
-    if (row.cells[row.cells.length - 2])
-      row.cells[row.cells.length - 2].innerText = shiftCount;
-
-    if (row.cells[row.cells.length - 1])
-      row.cells[row.cells.length - 1].innerText =
-        totalCost.toLocaleString("th-TH", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        });
-
-    grandTotalShifts += shiftCount;
-    grandTotalCost += totalCost;
-  });
-
-  const totalRow = document.getElementById("totalRow");
-
-  if (totalRow && totalRow.cells.length >= dayEnd) {
-
-    for (let c = dayStart; c < dayEnd; c++) {
-      if (totalRow.cells[c])
-        totalRow.cells[c].innerText = dailyTotals[c - dayStart];
-    }
-
-    totalRow.cells[totalRow.cells.length - 2].innerText = grandTotalShifts;
-    totalRow.cells[totalRow.cells.length - 1].innerText =
-      grandTotalCost.toLocaleString("th-TH", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
-  }
-
-  const statShiftEl = document.getElementById("statShifts");
-  const statCostEl = document.getElementById("statCost");
-
-  if (statShiftEl) statShiftEl.innerText = grandTotalShifts;
-
-  if (statCostEl)
-    statCostEl.innerText =
-      grandTotalCost.toLocaleString("th-TH", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
-}
 
 
-    
 
-    async function updateBudgetUI() {    
-      try {    
+    async function updateBudgetUI() {
+      try {
         const res = await callAPI("getBudgetByUser", {
           userId: currentUserId
-        });    
-        document.getElementById("budgetAllocated").value = Number(res.budget).toLocaleString();    
-        document.getElementById("budgetUsed").innerText = Number(res.expenses).toLocaleString();    
+        });
+        document.getElementById("budgetAllocated").value = Number(res.budget).toLocaleString();
+        document.getElementById("budgetUsed").innerText = Number(res.expenses).toLocaleString();
         document.getElementById("percentValue").innerText =
           res.budget > 0
             ? (res.expenses / res.budget * 100).toFixed(2)
             : "0.00";
-    
+
       } catch (err) {
         console.error(err);
       }
@@ -1408,35 +1420,35 @@ function calculateSummary() {
     });
 
     function runCalc() {
-    
+
       const btn = document.getElementById("btnCalc");
       btn.disabled = true;
       btn.innerText = "กำลังคำนวณ...";
-    
+
       const y = parseInt(document.getElementById("year").value) - 543;
       const m = parseInt(document.getElementById("month").value);
       const needP = parseInt(document.getElementById("needP").value) || 1;
       const needCH = parseInt(document.getElementById("needCH").value) || 1;
       const dayS = parseInt(document.getElementById("dayShift").value) || 0;
       const holiS = parseInt(document.getElementById("holiShift").value) || 0;
-    
+
       const rows = document.getElementById("tbody").rows;
-    
+
       let empsP = [];
       let empsCH = [];
-    
+
       // ===== แยกกลุ่มพนักงาน =====
       for (let i = 0; i < rows.length; i++) {
-    
+
         if (rows[i].id === "totalRow") continue;
-    
+
         const name = rows[i].cells[1].innerText.trim();
         const salary = parseFloat(rows[i].cells[2].innerText.replace(/,/g, '')) || 0;
         const jobSelect = rows[i].querySelector(".jobSelect");
         const job = jobSelect ? jobSelect.value : "";
-    
+
         if (!name || salary <= 0 || !job) continue;
-    
+
         const empObj = {
           index: i,
           name,
@@ -1446,60 +1458,60 @@ function calculateSummary() {
           quota: 0,
           weeklyCount: new Array(6).fill(0)
         };
-    
+
         if (job === "พชง") empsP.push(empObj);
         if (job === "ชชง") empsCH.push(empObj);
       }
-    
+
       const daysInMonth = new Date(y, m, 0).getDate();
-    
+
       let dailyPlan = [];
       let totalRequiredP = 0;
       let totalRequiredCH = 0;
-    
+
       // ===== สร้างแผนเวรทั้งเดือน =====
       for (let d = 1; d <= daysInMonth; d++) {
-    
+
         const isHoli = holidays.includes(d);
-    
+
         const shiftTypes =
           isHoli
             ? (holiS === 3 ? [1, 2, 3] : (holiS === 2 ? [2, 3] : [3]))
             : (dayS === 2 ? [1, 3] : [3]);
-    
+
         shiftTypes.forEach(st => {
-    
+
           for (let i = 0; i < needP; i++) {
             dailyPlan.push({ day: d, shift: st, job: "พชง" });
             totalRequiredP++;
           }
-    
+
           for (let i = 0; i < needCH; i++) {
             dailyPlan.push({ day: d, shift: st, job: "ชชง" });
             totalRequiredCH++;
           }
-    
+
         });
       }
-    
+
       const totalRequiredShifts = totalRequiredP + totalRequiredCH;
       document.getElementById("targetShifts").innerText = totalRequiredShifts;
-    
+
       // ===== คำนวณโควตา =====
       function calculateQuota(group, totalRequired) {
-    
+
         if (group.length === 0) return;
-    
+
         const sumInverse = group.reduce((acc, e) => acc + (1 / e.salary), 0);
         let currentTotal = 0;
-    
+
         group.forEach(e => {
           e.quota = Math.round(((1 / e.salary) / sumInverse) * totalRequired);
           currentTotal += e.quota;
         });
-    
+
         let diff = totalRequired - currentTotal;
-    
+
         if (diff > 0) {
           group.sort((a, b) => a.salary - b.salary);
           let i = 0;
@@ -1509,7 +1521,7 @@ function calculateSummary() {
             i++;
           }
         }
-    
+
         if (diff < 0) {
           group.sort((a, b) => b.salary - a.salary);
           let i = 0;
@@ -1522,10 +1534,10 @@ function calculateSummary() {
           }
         }
       }
-    
+
       calculateQuota(empsP, totalRequiredP);
       calculateQuota(empsCH, totalRequiredCH);
-    
+
       // ===== ล้างตารางก่อนกระจาย =====
       for (let r = 0; r < rows.length; r++) {
         if (rows[r].id === "totalRow") continue;
@@ -1533,58 +1545,58 @@ function calculateSummary() {
           rows[r].cells[c].innerText = "";
         }
       }
-    
+
       const firstDayOfMonth = new Date(y, m - 1, 1).getDay();
       const allEmps = [...empsP, ...empsCH];
-    
+
       dailyPlan.sort(() => Math.random() - 0.5);
-    
+
       // ===== กระจายเวร =====
       dailyPlan.forEach(plan => {
-    
+
         const weekIdx = Math.floor((plan.day + firstDayOfMonth - 1) / 7);
-    
+
         let candidates = allEmps.filter(e =>
           e.job === plan.job &&
           e.count < e.quota &&
           e.weeklyCount[weekIdx] < 2
         );
-    
+
         if (candidates.length === 0) {
           candidates = allEmps.filter(e =>
             e.job === plan.job &&
             e.weeklyCount[weekIdx] < 2
           );
         }
-    
+
         if (candidates.length === 0) {
           candidates = allEmps.filter(e => e.job === plan.job);
         }
-    
+
         if (candidates.length === 0) return;
-    
+
         candidates.sort((a, b) => a.count - b.count);
         const selected = candidates[0];
-    
+
         const row = rows[selected.index];
         const cellIndex = 3 + plan.day;
-    
+
         if (row && row.cells[cellIndex]) {
           row.cells[cellIndex].innerText = plan.shift;
           selected.count++;
           selected.weeklyCount[weekIdx]++;
         }
-    
+
       });
-    
+
       // ===== อัปเดตจำนวนลงเวรจริง =====
       let actualShifts = 0;
       allEmps.forEach(e => actualShifts += e.count);
       document.getElementById("statShifts").innerText = actualShifts;
-    
+
       // ===== คำนวณสรุป =====
       calculateSummary();
-    
+
       btn.disabled = false;
       btn.innerText = "คำนวณเวร";
     }
