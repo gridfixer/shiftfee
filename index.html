@@ -755,71 +755,184 @@ async function login() {
     }
 
     let holidays = [], employeeData = [];
-    async function reload() {
-      try {
-        if (!currentUserId) return;
-    
-        const yearEl = document.getElementById("year");
-        const monthEl = document.getElementById("month");
-    
-        const y = yearEl ? yearEl.value : "";
-        const m = monthEl ? monthEl.value : "";
-    
-        // ===== Reset หน้าจอระหว่างโหลด =====
-        const yearlyEl = document.getElementById("yearlyTotalCost");
-        const percentEl = document.getElementById("percentValue");
-    
-        if (yearlyEl) yearlyEl.innerText = "...";
-        if (percentEl) percentEl.innerText = "...";
-    
-        // ===== เรียก API =====
-        const data = await callAPI("getInitialData", {
-          userId: currentUserId,
-          year: y,
-          month: m
-        });
-    
-        // console.log("InitialData:", data);
-    
-        const s = data?.settings || {};
-    
-        // ===== ใส่ค่า Settings =====
-        const dayShiftEl = document.getElementById("dayShift");
-        const holiShiftEl = document.getElementById("holiShift");
-        const needPEl = document.getElementById("needP");
-        const needCHEl = document.getElementById("needCH");
-        const budgetEl = document.getElementById("budgetAllocated");
-    
-        if (dayShiftEl) dayShiftEl.value = s.day_shift ?? 0;
-        if (holiShiftEl) holiShiftEl.value = s.holi_shift ?? 0;
-        if (needPEl) needPEl.value = s.need_p ?? 0;
-        if (needCHEl) needCHEl.value = s.need_ch ?? 0;
-    
-        // ⭐ สำคัญ: ใส่งบประมาณ
-        if (budgetEl) {
-          budgetEl.value = Number(s.budget ?? 0).toLocaleString("th-TH");
-        }
-    
-        // ===== ข้อมูลหลัก =====
-        holidays = data?.holidays || [];
-        employeeData = data?.employees || [];
-        const schedule = data?.schedule || [];
-    
-        // ===== สร้างและเติมตาราง =====
-        buildTable();
-        fillTableWithData(employeeData, schedule);
-    
-        // ===== คำนวณสรุปเดือน =====
-        calculateSummary();
-    
-        // ===== อัปเดตยอดทั้งปี + เปอร์เซ็นต์ =====
-        await updateYearlyDisplay(currentUserId);
-    
-      } catch (err) {
-        console.error("Reload Error:", err);
-        alert("เกิดข้อผิดพลาดในการโหลดข้อมูล");
+function runCalc() {
+
+  const btn = document.getElementById("btnCalc");
+  btn.disabled = true;
+  btn.innerText = "กำลังคำนวณ...";
+
+  const y = parseInt(document.getElementById("year").value) - 543;
+  const m = parseInt(document.getElementById("month").value);
+  const needP = parseInt(document.getElementById("needP").value) || 1;
+  const needCH = parseInt(document.getElementById("needCH").value) || 1;
+  const dayS = parseInt(document.getElementById("dayShift").value) || 0;
+  const holiS = parseInt(document.getElementById("holiShift").value) || 0;
+
+  const rows = document.getElementById("tbody").rows;
+
+  let empsP = [];
+  let empsCH = [];
+
+  // ===== แยกกลุ่มพนักงาน =====
+  for (let i = 0; i < rows.length; i++) {
+
+    if (rows[i].id === "totalRow") continue;
+
+    const name = rows[i].cells[1].innerText.trim();
+    const salary = parseFloat(rows[i].cells[2].innerText.replace(/,/g, '')) || 0;
+    const jobSelect = rows[i].querySelector(".jobSelect");
+    const job = jobSelect ? jobSelect.value : "";
+
+    if (!name || salary <= 0 || !job) continue;
+
+    const empObj = {
+      index: i,
+      name,
+      salary,
+      job,
+      count: 0,
+      quota: 0,
+      weeklyCount: new Array(6).fill(0)
+    };
+
+    if (job === "พชง") empsP.push(empObj);
+    if (job === "ชชง") empsCH.push(empObj);
+  }
+
+  const daysInMonth = new Date(y, m, 0).getDate();
+
+  let dailyPlan = [];
+  let totalRequiredP = 0;
+  let totalRequiredCH = 0;
+
+  // ===== สร้างแผนเวรทั้งเดือน =====
+  for (let d = 1; d <= daysInMonth; d++) {
+
+    const isHoli = holidays.includes(d);
+
+    const shiftTypes =
+      isHoli
+        ? (holiS === 3 ? [1, 2, 3] : (holiS === 2 ? [2, 3] : [3]))
+        : (dayS === 2 ? [1, 3] : [3]);
+
+    shiftTypes.forEach(st => {
+
+      for (let i = 0; i < needP; i++) {
+        dailyPlan.push({ day: d, shift: st, job: "พชง" });
+        totalRequiredP++;
+      }
+
+      for (let i = 0; i < needCH; i++) {
+        dailyPlan.push({ day: d, shift: st, job: "ชชง" });
+        totalRequiredCH++;
+      }
+
+    });
+  }
+
+  const totalRequiredShifts = totalRequiredP + totalRequiredCH;
+  document.getElementById("targetShifts").innerText = totalRequiredShifts;
+
+  // ===== คำนวณโควตา =====
+  function calculateQuota(group, totalRequired) {
+
+    if (group.length === 0) return;
+
+    const sumInverse = group.reduce((acc, e) => acc + (1 / e.salary), 0);
+    let currentTotal = 0;
+
+    group.forEach(e => {
+      e.quota = Math.round(((1 / e.salary) / sumInverse) * totalRequired);
+      currentTotal += e.quota;
+    });
+
+    let diff = totalRequired - currentTotal;
+
+    if (diff > 0) {
+      group.sort((a, b) => a.salary - b.salary);
+      let i = 0;
+      while (diff > 0) {
+        group[i % group.length].quota++;
+        diff--;
+        i++;
       }
     }
+
+    if (diff < 0) {
+      group.sort((a, b) => b.salary - a.salary);
+      let i = 0;
+      while (diff < 0) {
+        if (group[i % group.length].quota > 0) {
+          group[i % group.length].quota--;
+          diff++;
+        }
+        i++;
+      }
+    }
+  }
+
+  calculateQuota(empsP, totalRequiredP);
+  calculateQuota(empsCH, totalRequiredCH);
+
+  // ===== ล้างตารางก่อนกระจาย =====
+  for (let r = 0; r < rows.length; r++) {
+    if (rows[r].id === "totalRow") continue;
+    for (let c = 4; c < rows[r].cells.length - 2; c++) {
+      rows[r].cells[c].innerText = "";
+    }
+  }
+
+  const firstDayOfMonth = new Date(y, m - 1, 1).getDay();
+  const allEmps = [...empsP, ...empsCH];
+
+  // สุ่มลำดับก่อนกระจาย
+  dailyPlan.sort(() => Math.random() - 0.5);
+
+  // ===== กระจายเวร =====
+  dailyPlan.forEach(plan => {
+
+    const weekIdx = Math.floor((plan.day + firstDayOfMonth - 1) / 7);
+
+    let candidates = allEmps.filter(e =>
+      e.job === plan.job &&
+      e.count < e.quota &&
+      e.weeklyCount[weekIdx] < 2
+    );
+
+    if (candidates.length === 0) {
+      candidates = allEmps.filter(e =>
+        e.job === plan.job &&
+        e.weeklyCount[weekIdx] < 2
+      );
+    }
+
+    if (candidates.length === 0) {
+      candidates = allEmps.filter(e => e.job === plan.job);
+    }
+
+    if (candidates.length === 0) return;
+
+    // เลือกคนที่เวรน้อยที่สุด
+    candidates.sort((a, b) => a.count - b.count);
+    const selected = candidates[0];
+
+    const row = rows[selected.index];
+    const cellIndex = 3 + plan.day;
+
+    if (row && row.cells[cellIndex]) {
+      row.cells[cellIndex].innerText = plan.shift;
+    }
+
+    selected.count++;
+    selected.weeklyCount[weekIdx]++;
+  });
+
+  // ===== คำนวณสรุปใหม่ =====
+  calculateSummary();
+
+  btn.disabled = false;
+  btn.innerText = "คำนวณเวร";
+}
 
     // ฟังก์ชันหยอดข้อมูลลงตาราง (ตัวเต็ม)
     function fillTableWithData(employees, schedule) {
