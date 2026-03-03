@@ -682,44 +682,46 @@
     }
 
     // let costFromOtherMonths = 0; // ตัวแปรเก็บยอดรวมของเดือนอื่นๆ ในปีนั้น
-async function updateYearlyDisplay(userId) {
-  try {
-
-    const year = document.getElementById("year")?.value;
-    const yearlyEl = document.getElementById("yearlyTotalCost");
-    const percentEl = document.getElementById("percentValue");
-    const budgetEl = document.getElementById("budgetAllocated");
-
-    if (!yearlyEl || !percentEl || !budgetEl) return;
-
-    const result = await callAPI("getYearlyTotal", {
-      userId: userId,
-      year: year
-    });
-
-    console.log(result)
-
-    const yearlyTotal = Number(result?.total || 0);
-    const budget = Number(
-      (budgetEl.value || "0").replace(/,/g, '')
-    );
-
-    yearlyEl.innerText = yearlyTotal.toLocaleString("th-TH", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
-
-    let percent = 0;
-    if (budget > 0) {
-      percent = (yearlyTotal / budget) * 100;
+    async function updateYearlyDisplay(userId) {
+      try {
+    
+        const year = document.getElementById("year")?.value;
+        const yearlyEl = document.getElementById("yearlyTotalCost");
+        const percentEl = document.getElementById("percentValue");
+        const budgetEl = document.getElementById("budgetAllocated");
+    
+        if (!yearlyEl || !percentEl || !budgetEl) return;
+    
+        const result = await callAPI("getYearlyTotal", {
+          userId: userId,
+          year: year
+        });
+    
+        console.log("Yearly API:", result);
+    
+        // ✅ ตรงนี้คือจุดแก้
+        const yearlyTotal = Number(result || 0);
+    
+        const budget = Number(
+          (budgetEl.value || "0").replace(/,/g, '')
+        );
+    
+        yearlyEl.innerText = yearlyTotal.toLocaleString("th-TH", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+    
+        let percent = 0;
+        if (budget > 0) {
+          percent = (yearlyTotal / budget) * 100;
+        }
+    
+        percentEl.innerText = percent.toFixed(2);
+    
+      } catch (err) {
+        console.error("Yearly Display Error:", err);
+      }
     }
-
-    percentEl.innerText = percent.toFixed(2);
-
-  } catch (err) {
-    console.error("Yearly Display Error:", err);
-  }
-}
     
     function formatBudgetInput(el) {
       let value = el.value.replace(/,/g, '');
