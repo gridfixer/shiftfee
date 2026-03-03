@@ -1137,63 +1137,83 @@
       }
     }
 
-    function calculateSummary() {
-      const table = document.getElementById("scheduleTable");
-      const rows = table.querySelectorAll("tbody tr");
+
     
-      let grandTotalShifts = 0;
-      let grandTotalCost = 0;
-    
-      rows.forEach(row => {
-    
-        let shiftCount = 0;
-    
-        // ===== นับเวรจากคอลัมน์วันที่ =====
-        for (let c = 4; c < row.cells.length - 2; c++) {
-    
-          const input = row.cells[c].querySelector("input");
-          const val = input 
-            ? input.value.trim() 
-            : row.cells[c].innerText.trim();
-    
-          // ✅ นับเฉพาะ 1 2 3
-          if (["1", "2", "3"].includes(val)) {
-            shiftCount++;
-          }
-        }
-    
-        // ===== เงินเดือน (คอลัมน์ที่ 3 ตามของคุณ) =====
-        const salary = Number(
-          row.cells[3].innerText.replace(/,/g, '')
-        ) || 0;
-    
-        // ===== คิดค่าใช้จ่าย =====
-        const totalCost = shiftCount * salary;
-    
-        // ===== ใส่ค่ากลับไปท้ายตาราง =====
-        row.cells[row.cells.length - 2].innerText = shiftCount;
-        row.cells[row.cells.length - 1].innerText = totalCost.toLocaleString();
-    
-        grandTotalShifts += shiftCount;
-        grandTotalCost += totalCost;
-      });
-    
-      // ===== รวมทั้งหมด =====
-      document.getElementById("totalShifts").innerText = grandTotalShifts;
-      document.getElementById("totalCost").innerText = grandTotalCost.toLocaleString();
-    
-      // ===== เปอร์เซ็นต์งบ =====
-      const budget = Number(
-        document.getElementById("budget").innerText.replace(/,/g, '')
-      ) || 0;
-    
-      const percent = budget > 0
-        ? (grandTotalCost / budget) * 100
-        : 0;
-    
-      document.getElementById("percentUsed").innerText =
-        percent.toFixed(2) + "%";
+function calculateSummary() {
+
+  const table = document.getElementById("scheduleTable");
+  const rows = table.querySelectorAll("tbody tr");
+
+  let grandTotalShifts = 0;
+  let grandTotalCost = 0;
+
+  rows.forEach(row => {
+
+    if (row.id === "totalRow") return;
+
+    let shiftCount = 0;
+
+    // ===== นับเวร =====
+    for (let c = 4; c < row.cells.length - 2; c++) {
+
+      const val = row.cells[c].innerText.trim();
+
+      if (["1", "2", "3"].includes(val)) {
+        shiftCount++;
+      }
     }
+
+    // ===== เงินเดือน (คอลัมน์ 2 ของจริง) =====
+    const salary = parseFloat(
+      row.cells[2].innerText.replace(/,/g, '')
+    ) || 0;
+
+    // ===== คิดเงินตามสูตรคุณ =====
+    const costPerShift = (salary / 30 / 7 * 8);
+    const totalCost = costPerShift * shiftCount;
+
+    // ===== ใส่ค่าลงท้ายแถว =====
+    row.cells[row.cells.length - 2].innerText = shiftCount;
+    row.cells[row.cells.length - 1].innerText =
+      totalCost.toLocaleString("th-TH", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+
+    grandTotalShifts += shiftCount;
+    grandTotalCost += totalCost;
+  });
+
+  // ===== อัปเดตการ์ดด้านบน =====
+  const statShiftEl = document.getElementById("statShifts");
+  const statCostEl = document.getElementById("statCost");
+
+  if (statShiftEl) statShiftEl.innerText = grandTotalShifts;
+
+  if (statCostEl)
+    statCostEl.innerText =
+      grandTotalCost.toLocaleString("th-TH", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+
+  // ===== อัปเดตแถวรวมล่างสุด =====
+  const totalShiftCell = document.getElementById("grandTotalShifts");
+  const totalCostCell = document.getElementById("grandTotalCost");
+
+  if (totalShiftCell) totalShiftCell.innerText = grandTotalShifts;
+
+  if (totalCostCell)
+    totalCostCell.innerText =
+      grandTotalCost.toLocaleString("th-TH", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+
+}
+
+
+    
 
     async function updateBudgetUI() {    
       try {    
