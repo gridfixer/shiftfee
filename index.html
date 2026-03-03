@@ -1147,32 +1147,36 @@ function calculateSummary() {
   let grandTotalShifts = 0;
   let grandTotalCost = 0;
 
+  // ===== เตรียมตัวแปรรวมรายวัน =====
+  const firstRow = rows[0];
+  const dayStart = 4;
+  const dayEnd = firstRow.cells.length - 2;
+  const dailyTotals = new Array(dayEnd - dayStart).fill(0);
+
   rows.forEach(row => {
 
     if (row.id === "totalRow") return;
 
     let shiftCount = 0;
 
-    // ===== นับเวร =====
-    for (let c = 4; c < row.cells.length - 2; c++) {
+    // ===== วนแต่ละวัน =====
+    for (let c = dayStart; c < dayEnd; c++) {
 
       const val = row.cells[c].innerText.trim();
 
       if (["1", "2", "3"].includes(val)) {
         shiftCount++;
+        dailyTotals[c - dayStart]++; // ← เพิ่มยอดรายวัน
       }
     }
 
-    // ===== เงินเดือน (คอลัมน์ 2 ของจริง) =====
     const salary = parseFloat(
       row.cells[2].innerText.replace(/,/g, '')
     ) || 0;
 
-    // ===== คิดเงินตามสูตรคุณ =====
     const costPerShift = (salary / 30 / 7 * 8);
     const totalCost = costPerShift * shiftCount;
 
-    // ===== ใส่ค่าลงท้ายแถว =====
     row.cells[row.cells.length - 2].innerText = shiftCount;
     row.cells[row.cells.length - 1].innerText =
       totalCost.toLocaleString("th-TH", {
@@ -1184,6 +1188,22 @@ function calculateSummary() {
     grandTotalCost += totalCost;
   });
 
+  // ===== ใส่ยอดรวมรายวันลง totalRow =====
+  const totalRow = document.getElementById("totalRow");
+
+  if (totalRow) {
+    for (let c = dayStart; c < dayEnd; c++) {
+      totalRow.cells[c].innerText = dailyTotals[c - dayStart];
+    }
+
+    totalRow.cells[totalRow.cells.length - 2].innerText = grandTotalShifts;
+    totalRow.cells[totalRow.cells.length - 1].innerText =
+      grandTotalCost.toLocaleString("th-TH", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+  }
+
   // ===== อัปเดตการ์ดด้านบน =====
   const statShiftEl = document.getElementById("statShifts");
   const statCostEl = document.getElementById("statCost");
@@ -1192,19 +1212,6 @@ function calculateSummary() {
 
   if (statCostEl)
     statCostEl.innerText =
-      grandTotalCost.toLocaleString("th-TH", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
-
-  // ===== อัปเดตแถวรวมล่างสุด =====
-  const totalShiftCell = document.getElementById("grandTotalShifts");
-  const totalCostCell = document.getElementById("grandTotalCost");
-
-  if (totalShiftCell) totalShiftCell.innerText = grandTotalShifts;
-
-  if (totalCostCell)
-    totalCostCell.innerText =
       grandTotalCost.toLocaleString("th-TH", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
