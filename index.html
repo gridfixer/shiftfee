@@ -672,6 +672,57 @@
     let localDataCache = {}; // เก็บข้อมูลแยกตาม userId และ ปี-เดือน
     let holidays = [], employeeData = [];
     let lastKnownTotalCost = 0; // เก็บค่ารวมเพื่อใช้เปรียบเทียบ
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzrnL8t2lmHUh0TQcvsJ4-CdoW4WoiJdW_qQ8-MdPOdXesCPZEQaC654I4XQcfiRmSG/exec";
+
+    // จำลอง google.script.run เพื่อให้ฟังก์ชันเดิมไม่ต้องแก้ไขโค้ดส่วนอื่น
+    const google = {
+      script: {
+        run: {
+          withSuccessHandler: function (callback) {
+            this.successHandler = callback;
+            return this;
+          },
+          withFailureHandler: function (callback) {
+            this.failureHandler = callback;
+            return this;
+          },
+          // สร้าง proxy เพื่อดักจับการเรียกชื่อฟังก์ชันต่างๆ
+          // ฟังก์ชันชื่อเดิมที่เคยเรียกจะวิ่งมาเข้าฟังก์ชันนี้อัตโนมัติ
+          checkLogin: function (...args) { return callServer("checkLogin", args, this.successHandler, this.failureHandler); },
+          getInitialData: function (...args) { return callServer("getInitialData", args, this.successHandler, this.failureHandler); },
+          saveAllDataToSheet: function (...args) { return callServer("saveAllDataToSheet", args, this.successHandler, this.failureHandler); },
+          getYearlyTotal: function (...args) { return callServer("getYearlyTotal", args, this.successHandler, this.failureHandler); }
+        }
+      }
+    };
+
+    // ฟังก์ชันส่งข้อมูลไปหา GAS ผ่าน fetch
+    async function callServer(functionName, args, successHandler, failureHandler) {
+      try {
+        const response = await fetch(WEB_APP_URL, {
+          method: 'POST',
+          body: JSON.stringify({ functionName: functionName, arguments: args }),
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' } // GAS ต้องการแบบนี้
+        });
+
+        const text = await response.text(); // อ่านเป็น Text ก่อน
+        if (!text) {
+          throw new Error("Server did not return any data");
+        }
+
+        const result = JSON.parse(text); // ค่อยแปลงเป็น JSON
+
+        if (result.error) {
+          if (failureHandler) failureHandler(result.error);
+        } else {
+          if (successHandler) successHandler(result);
+        }
+      } catch (err) {
+        if (failureHandler) failureHandler(err.toString());
+        console.error("Error calling server:", err);
+      }
+    }
+
 
     // --- จุดเพิ่มที่ 1: ตรวจสอบสถานะตอนโหลดหน้าเว็บ (F5) ---
     let currentUserId = null;
