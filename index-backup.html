@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-
+  
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400&display=swap" rel="stylesheet">
 
@@ -102,14 +102,16 @@
     #welcomeSection {
       background: #ede9fe;
       color: #5b21b6;
-      padding: 6px 14px;
+      /* padding: 6px 14px; */
+      padding: 8px 14px 4px 14px;
       border-radius: 8px;
     }
 
     .btn-logout-minimal {
       background: none !important;
       color: #5b21b6;
-      padding: 4px 0 0 4px !important;
+      /* padding: 4px 0 0 4px !important; */
+      padding: 3px 0 0 5px !important;
       transition: all 0.2s ease;
     }
 
@@ -480,10 +482,17 @@
 
   <div class="topbar">
     <div class="topbar-title">ระบบควบคุมค่าใช้จ่ายในการอยู่เวร StandBy</div>
-    <div id="loginSection" class="login-box">
+    <!-- <div id="loginSection" class="login-box">
       <input id="username" placeholder="ชื่อผู้ใช้งาน">
       <input type="password" id="password" placeholder="รหัสผ่าน">
       <button onclick="login()">เข้าสู่ระบบ</button>
+    </div> -->
+    <div id="loginSection" class="login-box">
+      <form onsubmit="login(); return false;">
+        <input id="username" placeholder="ชื่อผู้ใช้งาน" autocomplete="username">
+        <input type="password" id="password" placeholder="รหัสผ่าน" autocomplete="current-password">
+        <button type="submit">เข้าสู่ระบบ</button>
+      </form>
     </div>
 
     <div id="welcomeSection" style="display:none;">
@@ -595,57 +604,59 @@
   </div>
 
   <script>
-        // const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyPBa8fWtxQBlfoooFwWdIKoLOLRkGw4fisbJUTphk0BHjPtEK-Y6qqp6mI-Jn5Xoxv/exec";
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzrnL8t2lmHUh0TQcvsJ4-CdoW4WoiJdW_qQ8-MdPOdXesCPZEQaC654I4XQcfiRmSG/exec";
-        
-        // จำลอง google.script.run เพื่อให้ฟังก์ชันเดิมไม่ต้องแก้ไขโค้ดส่วนอื่น
-        const google = {
-            script: {
-                run: {
-                    withSuccessHandler: function (callback) {
-                        this.successHandler = callback;
-                        return this;
-                    },
-                    withFailureHandler: function (callback) {
-                        this.failureHandler = callback;
-                        return this;
-                    },
-                    // สร้าง proxy เพื่อดักจับการเรียกชื่อฟังก์ชันต่างๆ
-                    // ฟังก์ชันชื่อเดิมที่เคยเรียกจะวิ่งมาเข้าฟังก์ชันนี้อัตโนมัติ
-                    checkLogin: function (...args) { return callServer("checkLogin", args, this.successHandler, this.failureHandler); },
-                    getInitialData: function (...args) { return callServer("getInitialData", args, this.successHandler, this.failureHandler); },
-                    saveAllDataToSheet: function (...args) { return callServer("saveAllDataToSheet", args, this.successHandler, this.failureHandler); },
-                    getYearlyTotal: function (...args) { return callServer("getYearlyTotal", args, this.successHandler, this.failureHandler); }
-                }
-            }
-        };
+    let localDataCache = {}; // เก็บข้อมูลแยกตาม userId และ ปี-เดือน
+    let holidays = [], employeeData = [];
+    // const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyPBa8fWtxQBlfoooFwWdIKoLOLRkGw4fisbJUTphk0BHjPtEK-Y6qqp6mI-Jn5Xoxv/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzrnL8t2lmHUh0TQcvsJ4-CdoW4WoiJdW_qQ8-MdPOdXesCPZEQaC654I4XQcfiRmSG/exec";
 
-        // ฟังก์ชันส่งข้อมูลไปหา GAS ผ่าน fetch
-        async function callServer(functionName, args, successHandler, failureHandler) {
-            try {
-                const response = await fetch(WEB_APP_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ functionName: functionName, arguments: args }),
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' } // GAS ต้องการแบบนี้
-                });
-
-                const text = await response.text(); // อ่านเป็น Text ก่อน
-                if (!text) {
-                    throw new Error("Server did not return any data");
-                }
-
-                const result = JSON.parse(text); // ค่อยแปลงเป็น JSON
-
-                if (result.error) {
-                    if (failureHandler) failureHandler(result.error);
-                } else {
-                    if (successHandler) successHandler(result);
-                }
-            } catch (err) {
-                if (failureHandler) failureHandler(err.toString());
-                console.error("Error calling server:", err);
-            }
+    // จำลอง google.script.run เพื่อให้ฟังก์ชันเดิมไม่ต้องแก้ไขโค้ดส่วนอื่น
+    const google = {
+      script: {
+        run: {
+          withSuccessHandler: function (callback) {
+            this.successHandler = callback;
+            return this;
+          },
+          withFailureHandler: function (callback) {
+            this.failureHandler = callback;
+            return this;
+          },
+          // สร้าง proxy เพื่อดักจับการเรียกชื่อฟังก์ชันต่างๆ
+          // ฟังก์ชันชื่อเดิมที่เคยเรียกจะวิ่งมาเข้าฟังก์ชันนี้อัตโนมัติ
+          checkLogin: function (...args) { return callServer("checkLogin", args, this.successHandler, this.failureHandler); },
+          getInitialData: function (...args) { return callServer("getInitialData", args, this.successHandler, this.failureHandler); },
+          saveAllDataToSheet: function (...args) { return callServer("saveAllDataToSheet", args, this.successHandler, this.failureHandler); },
+          getYearlyTotal: function (...args) { return callServer("getYearlyTotal", args, this.successHandler, this.failureHandler); }
         }
+      }
+    };
+
+    // ฟังก์ชันส่งข้อมูลไปหา GAS ผ่าน fetch
+    async function callServer(functionName, args, successHandler, failureHandler) {
+      try {
+        const response = await fetch(WEB_APP_URL, {
+          method: 'POST',
+          body: JSON.stringify({ functionName: functionName, arguments: args }),
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' } // GAS ต้องการแบบนี้
+        });
+
+        const text = await response.text(); // อ่านเป็น Text ก่อน
+        if (!text) {
+          throw new Error("Server did not return any data");
+        }
+
+        const result = JSON.parse(text); // ค่อยแปลงเป็น JSON
+
+        if (result.error) {
+          if (failureHandler) failureHandler(result.error);
+        } else {
+          if (successHandler) successHandler(result);
+        }
+      } catch (err) {
+        if (failureHandler) failureHandler(err.toString());
+        console.error("Error calling server:", err);
+      }
+    }
 
 
     // --- จุดเพิ่มที่ 1: ตรวจสอบสถานะตอนโหลดหน้าเว็บ (F5) ---
@@ -770,11 +781,9 @@
     let costFromOtherMonths = 0; // ตัวแปรเก็บยอดรวมของเดือนอื่นๆ ในปีนั้น
     function updateYearlyDisplay(userId) {
       const year = document.getElementById("year").value;
-
       google.script.run.withSuccessHandler(totalAllYear => {
 
         const total = parseFloat(totalAllYear) || 0;
-
         document.getElementById("yearlyTotalCost").innerText =
           total.toLocaleString('th-TH', {
             minimumFractionDigits: 2,
@@ -799,73 +808,88 @@
       }
     }
 
-    let holidays = [], employeeData = [];
-    function reload() {
+
+
+    function reload(forceReload = false) {
       if (!currentUserId) return;
 
       const y = document.getElementById("year").value;
       const m = document.getElementById("month").value;
+      const cacheKey = `${currentUserId}_${y}_${m}`;
+      const statusEl = document.getElementById("dataSource");
 
-      // --- 1. ส่วนการรีเซ็ตหน้าจอ (ป้องกันค่าเก่าค้างตอนเปลี่ยนเดือน) ---
-      costFromOtherMonths = 0;
-      const yearlyEl = document.getElementById("yearlyTotalCost");
       const percentEl = document.getElementById("percentValue");
-      if (yearlyEl) yearlyEl.innerText = "...";
-      // if (percentEl) percentEl.innerText = "...";
       if (percentEl) {
-        percentEl.innerHTML = `
-          <div class="dots-container">
-            <span class="dot dot1"></span>
-            <span class="dot dot2"></span>
-            <span class="dot dot3"></span>
-          </div>
-        `;
+        percentEl.innerHTML = `<div class="dots-container"><span class="dot dot1"></span><span class="dot dot2"></span><span class="dot dot3"></span></div>`;
       }
 
+      // --- [จุดที่ 1: เช็คเงื่อนไขต้องอยู่บนสุด] ---
+      // แก้เงื่อนไข: ถ้าไม่ใช่การสั่ง Force (คือไม่ใช่ true) และมี Cache ให้ดึงจาก Cache
+      if (forceReload !== true && localDataCache && localDataCache[cacheKey]) {
+        console.log("✅ [Hit]: " + cacheKey);
+        renderDataToUI(localDataCache[cacheKey]);
+        return;
+      }
 
-      // แสดง Loading เล็กน้อยที่ปุ่มหรือตาราง (ถ้ามี)
-      console.log("กำลังโหลดข้อมูลสำหรับ:", y, m);
+      // --- [จุดที่ 2: ถ้าหลุดมาถึงตรงนี้ แสดงว่าต้องดึงจาก Server] ---
+      console.log("🚀 [Server]: " + cacheKey);
 
       google.script.run.withSuccessHandler(data => {
-        // --- 2. การดึงข้อมูลจาก User / Settings (จุดที่ข้อมูลไม่แสดงตอนแรก) ---
-        const s = data.settings || {};
+        // บันทึกลงถังเก็บข้อมูล
+        localDataCache[cacheKey] = data;
+        console.log("💾 [Cache]:" + cacheKey);
+        renderDataToUI(data);
+      }).getInitialData(currentUserId, y, m);
+    }
 
-        // หยอดค่าจาก Spreadsheet ลงใน Input ต่างๆ
-        if (document.getElementById("dayShift")) document.getElementById("dayShift").value = s.day_shift || 0;
-        if (document.getElementById("holiShift")) document.getElementById("holiShift").value = s.holi_shift || 0;
-        if (document.getElementById("needP")) document.getElementById("needP").value = s.need_p || 0;
-        if (document.getElementById("needCH")) document.getElementById("needCH").value = s.need_ch || 0;
+    function renderDataToUI(data) {
+      // 1. เคลียร์ค่า/เซตค่าเบื้องต้น (ทำทันที)
+      const s = data.settings || {};
+      if (document.getElementById("dayShift")) document.getElementById("dayShift").value = s.day_shift || 0;
+      if (document.getElementById("holiShift")) document.getElementById("holiShift").value = s.holi_shift || 0;
+      if (document.getElementById("needP")) document.getElementById("needP").value = s.need_p || 0;
+      if (document.getElementById("needCH")) document.getElementById("needCH").value = s.need_ch || 0;
 
-        // จัดการส่วนงบประมาณจัดสรร (เพิ่มคอมม่า)
-        if (document.getElementById("budgetAllocated")) {
-          const bValue = Number(s.budget) || 0;
-          document.getElementById("budgetAllocated").value = bValue.toLocaleString();
-        }
+      if (document.getElementById("budgetAllocated")) {
+        const bValue = Number(s.budget) || 0;
+        document.getElementById("budgetAllocated").value = bValue.toLocaleString();
+      }
 
-        // --- 3. จัดการข้อมูลพนักงานและวันหยุด ---
-        holidays = data.holidays || [];
-        employeeData = data.employees || [];
+      holidays = data.holidays || [];
+      employeeData = data.employees || [];
+      costFromOtherMonths = Number(data.otherMonthsTotal) || 0;
 
-        // เก็บยอดเงินสะสมของเดือนอื่นๆ ที่ Server คำนวณมาให้แล้ว
-        costFromOtherMonths = Number(data.otherMonthsTotal) || 0;
+      // --- ใช้ Double RequestAnimationFrame เพื่อคุมจังหวะ Loading ---
+      requestAnimationFrame(() => {
 
-        // --- 4. สร้างและเติมข้อมูลตาราง ---
+        // 2. ล้างตารางเก่าทิ้งทันที (ป้องกันข้อมูลเดือนเก่าค้าง)
+        const tbody = document.getElementById("tbody");
+        if (tbody) tbody.innerHTML = "";
+
+        // 3. สั่งสร้างตารางใหม่และใส่ข้อมูล (หนัก CPU)
         buildTable();
         fillTableWithData(employeeData, data.schedule || []);
 
-        // --- 5. คำนวณสรุปผลทันที (เปอร์เซ็นต์ / ทั้งปี) ---
-        // เรียก calculateSummary เพื่อให้ตัวเลข % แสดงผลทันทีที่โหลดเสร็จ
-        if (typeof calculateSummary === "function") {
-          calculateSummary();
-        }
+        // 4. รอให้ Browser "วาดภาพตาราง" ลงจอเสร็จจริงๆ ก่อน
+        requestAnimationFrame(() => {
 
-        // อัปเดตการแสดงผลยอดรวมรายปี (ถ้ามีส่วนแสดงผลแยก)
-        updateYearlyDisplay(currentUserId);
+          // 5. เมื่อตารางมาแล้ว ค่อยคำนวณเปอร์เซ็นต์ (ซึ่งจะไปเขียนทับ Dots ทันที)
+          if (typeof calculateSummary === "function") {
+            calculateSummary();
+          } else {
+            const percentEl = document.getElementById("percentValue");
+            if (percentEl) percentEl.innerText = "0.00";
+          }
 
-        console.log("โหลดข้อมูลสำเร็จ");
+          if (typeof updateYearlyDisplay === "function") {
+            updateYearlyDisplay(currentUserId);
+          }
 
-      }).getInitialData(currentUserId, y, m);
+          console.log("✅ Render complete & Dots hidden.");
+        });
+      });
     }
+
 
     // ฟังก์ชันหยอดข้อมูลลงตาราง (ตัวเต็ม)
     function fillTableWithData(employees, schedule) {
@@ -881,7 +905,6 @@
         row.cells[1].innerText = emp.fullname; // ชื่อ
         row.cells[2].innerText = Number(emp.salary).toLocaleString(); // เงินเดือน
 
-        // --- แก้ไขจุดนี้ ---
         const jobSelect = row.cells[3].querySelector("select");
         const jobText = row.cells[3].querySelector(".job-text");
 
@@ -1037,7 +1060,7 @@
       const month = parseInt(document.getElementById("month").value);
       const daysInMonth = new Date(year - 543, month, 0).getDate();
 
-      // 1. ดึงข้อมูลการตั้งค่า (Settings)
+      // 1. ดึงข้อมูลการตั้งค่า (Settings) - เหมือนเดิมของคุณ
       const userSettings = {
         day_shift: document.getElementById("dayShift") ? document.getElementById("dayShift").value : 0,
         holi_shift: document.getElementById("holiShift") ? document.getElementById("holiShift").value : 0,
@@ -1048,6 +1071,8 @@
 
       let employeesToSave = [];
       let scheduleToSave = [];
+
+      // ใช้ Logic เดิมที่คุณใช้ "tbody" ซึ่งมันอ่านค่าได้ครบแน่นอน
       const rows = document.getElementById("tbody").rows;
 
       for (let i = 0; i < rows.length; i++) {
@@ -1060,7 +1085,9 @@
         const jobElement = rows[i].cells[3].querySelector("select, input");
         const job = jobElement ? jobElement.value : rows[i].cells[3].innerText.trim();
 
+        // รักษา ID พนักงานเดิม
         let empId = (employeeData[i] && employeeData[i].id) ? employeeData[i].id : Math.random().toString(36).substring(2, 8);
+
         employeesToSave.push({
           id: empId,
           fullname: fullname,
@@ -1068,7 +1095,7 @@
           job: job
         });
 
-        // ===== เก็บ schedule =====
+        // ===== เก็บ schedule ตาม Logic เดิมของคุณ =====
         for (let d = 1; d <= daysInMonth; d++) {
           const cellIndex = 3 + d;
           const cell = rows[i].cells[cellIndex];
@@ -1078,10 +1105,7 @@
               const cost = (salary / 30 / 7 * 8);
               scheduleToSave.push({
                 employee_id: empId,
-                date:
-                  (year - 543) + "-" +
-                  String(month).padStart(2, '0') + "-" +
-                  String(d).padStart(2, '0'),
+                date: (year - 543) + "-" + String(month).padStart(2, '0') + "-" + String(d).padStart(2, '0'),
                 shift: shiftValue,
                 cost: cost.toFixed(2)
               });
@@ -1090,15 +1114,27 @@
         }
       }
 
+      // LOG เพื่อความมั่นใจ (คราวนี้จะไม่เป็น 0 แล้ว)
+      console.log("--- Check Data Before Save ---");
+      console.log("Employees to Save:", employeesToSave.length, employeesToSave);
+      console.log("Schedule Items to Save:", scheduleToSave.length);
+
       // ===== ส่งไป Server =====
       google.script.run
         .withSuccessHandler(res => {
-          // alert(res);
           if (btn) {
             btn.disabled = false;
             btn.innerText = "บันทึกข้อมูล";
           }
-          reload();
+
+          // --- ส่วนที่เพิ่มเพื่อ Refresh Policy ---
+          // เมื่อเซฟสำเร็จ ให้ล้าง Cache ทันที เพื่อป้องกันข้อมูลเก่าค้างตอนกดเปลี่ยนเดือน
+          localDataCache = {};
+
+          // เรียก reload(true) เพื่อดึงค่าที่เพิ่งเซฟไปกลับมาเก็บใน Cache ใหม่
+          reload(true);
+
+          // alert("บันทึกข้อมูลเรียบร้อยแล้ว");
         })
         .withFailureHandler(err => {
           alert("เกิดข้อผิดพลาด: " + err);
@@ -1116,6 +1152,7 @@
           month
         );
     }
+
 
     // 2. สร้างตาราง (ตำแหน่งเริ่มต้นเป็นค่าว่าง)
     function buildTable() {
@@ -1137,16 +1174,16 @@
       for (let i = 0; i < 20; i++) {
         // ค้นหาส่วนเนื้อหา (20 แถว) ใน buildTable และปรับตรง <td> ตำแหน่ง
         let rowHtml = `<tr><td>${i + 1}</td>
-          <td contenteditable="true"></td>
-          <td contenteditable="true" class="col-salary"></td>
-          <td class="job-cell">
-            <span class="job-text"></span>
-            <select class="jobSelect" onchange="updateJobText(this)">
-              <option value=""></option>
-              <option value="พชง">พชง</option>
-              <option value="ชชง">ชชง</option>
-            </select>
-          </td>`;
+            <td contenteditable="true"></td>
+            <td contenteditable="true" class="col-salary"></td>
+            <td class="job-cell">
+              <span class="job-text"></span>
+              <select class="jobSelect" onchange="updateJobText(this)">
+                <option value=""></option>
+                <option value="พชง">พชง</option>
+                <option value="ชชง">ชชง</option>
+              </select>
+            </td>`;
 
         // ... โค้ดส่วนสร้างวันที่เดิม ...
         for (let d = 1; d <= days; d++) {
@@ -1158,20 +1195,15 @@
 
       }
 
-
-
-
       // --- 🆕 แถวรวมที่ปรับ Padding/Margin ให้เท่าหัวตาราง ---
       // let f = `<tr id="totalRow"><td colspan="4" style="text-align: right;">รวม:</td>`;
       let f = `<tr id="totalRow"><td></td> <td></td> <td class="col-salary"></td> <td style="text-align: right;">รวม:</td>`;
-
       for (let d = 1; d <= days; d++) {
         // ใช้ padding: 10px 2px ให้เท่ากับที่กำหนดใน CSS #scheduleTable thead th
         f += `<td class="dayTotal" id="dayTotal_${d}">0</td>`;
       }
-
       f += `<td id="grandTotalShifts">0</td>
-              <td id="grandTotalCost">0.00</td></tr>`;
+            <td id="grandTotalCost">0.00</td></tr>`;
 
       document.getElementById("tbody").innerHTML = b + f;
       document.getElementById("tbody").oninput = calculateSummary;
