@@ -563,7 +563,8 @@
     <div id="welcomeSection" style="display:none;">
       <span>ยินดีต้อนรับ <span id="welcomeUser"></span></span>
       <button onclick="logout()" class="btn-logout-minimal" title="ออกจากระบบ">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
           <polyline points="16 17 21 12 16 7"></polyline>
           <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -672,8 +673,8 @@
     let localDataCache = {}; // เก็บข้อมูลแยกตาม userId และ ปี-เดือน
     let holidays = [], employeeData = [];
     let lastKnownTotalCost = 0; // เก็บค่ารวมเพื่อใช้เปรียบเทียบ
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyPBa8fWtxQBlfoooFwWdIKoLOLRkGw4fisbJUTphk0BHjPtEK-Y6qqp6mI-Jn5Xoxv/exec"; //Tester
-    // const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzrnL8t2lmHUh0TQcvsJ4-CdoW4WoiJdW_qQ8-MdPOdXesCPZEQaC654I4XQcfiRmSG/exec";
+    // const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyPBa8fWtxQBlfoooFwWdIKoLOLRkGw4fisbJUTphk0BHjPtEK-Y6qqp6mI-Jn5Xoxv/exec"; //Tester
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwlGzN7B4rqLwbGE9yXks2z8MlCTlf1jFMNoREAnUd472z7ENnq2H-hasIrKlDV7t5S/exec"; //Real
 
     // จำลอง google.script.run เพื่อให้ฟังก์ชันเดิมไม่ต้องแก้ไขโค้ดส่วนอื่น
     const google = {
@@ -691,8 +692,9 @@
           // ฟังก์ชันชื่อเดิมที่เคยเรียกจะวิ่งมาเข้าฟังก์ชันนี้อัตโนมัติ
           checkLogin: function (...args) { return callServer("checkLogin", args, this.successHandler, this.failureHandler); },
           getInitialData: function (...args) { return callServer("getInitialData", args, this.successHandler, this.failureHandler); },
-          saveAllDataToSheet: function (...args) { return callServer("saveAllDataToSheet", args, this.successHandler, this.failureHandler); },
-          getYearlyTotal: function (...args) { return callServer("getYearlyTotal", args, this.successHandler, this.failureHandler); }
+          saveSelectiveData: function (...args) { return callServer("saveSelectiveData", args, this.successHandler, this.failureHandler); },
+          getYearlyTotal: function (...args) { return callServer("getYearlyTotal", args, this.successHandler, this.failureHandler); },
+          generatePdfFromServer: function (...args) { return callServer("generatePdfFromServer", args, this.successHandler, this.failureHandler); }
         }
       }
     };
@@ -727,7 +729,7 @@
 
     // --- จุดเพิ่มที่ 1: ตรวจสอบสถานะตอนโหลดหน้าเว็บ (F5) ---
     let currentUserId = null;
-    window.onload = function() {
+    window.onload = function () {
       const savedId = localStorage.getItem("app_userId");   // ดึง ID จริงมาใช้ดึงข้อมูล
       const savedName = localStorage.getItem("app_userName"); // ดึงชื่อมาแสดงผล
       if (savedId && savedName) {
@@ -769,19 +771,19 @@
           setBtnStatus(btn, false, originalText);
           if (res.success) {
             // 1. เก็บ ID จริงไว้ในตัวแปรหลัก (สำคัญมากสำหรับการโหลดข้อมูล)
-            currentUserId = res.userId; 
-            
+            currentUserId = res.userId;
+
             // 2. บันทึก ID จริงลงเครื่อง เพื่อใช้ตอน F5
-            localStorage.setItem("app_userId", res.userId); 
+            localStorage.setItem("app_userId", res.userId);
             // 3. บันทึกชื่อที่พิมพ์ลงเครื่อง เพื่อใช้แสดงผลหน้าจอ
-            localStorage.setItem("app_userName", u.value); 
+            localStorage.setItem("app_userName", u.value);
 
             document.getElementById("loginSection").style.display = "none";
             document.getElementById("welcomeSection").style.display = "flex";
-            
+
             // แสดงชื่อผู้ใช้ (u.value) แต่เก็บ ID ไว้ในตัวแปรระบบ
-            document.getElementById("welcomeUser").innerText = u.value; 
-            
+            document.getElementById("welcomeUser").innerText = u.value;
+
             document.getElementById("mainContent").style.display = "block";
             initDateDropdown();
             reload();
@@ -799,17 +801,17 @@
     function logout() {
       if (confirm("ต้องการออกจากระบบ?")) {
         localStorage.clear(); // ล้างทุกอย่างที่เกี่ยวกับ App นี้ในเครื่อง
-        
+
         // บังคับ Hard Reload เพื่อล้าง Cache ของ Browser ทั้งหมด
-        window.location.reload(true); 
+        window.location.reload(true);
       }
     }
 
     function initDateDropdown() {
       const now = new Date(), curM = now.getMonth() + 1, curY = now.getFullYear() + 543;
       document.getElementById("year").innerHTML = `<option value="${curY}">${curY}</option>`;
-      const mNames = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
-      document.getElementById("month").innerHTML = mNames.map((m, i) => `<option value="${i+1}" ${i+1===curM?'selected':''}>${m}</option>`).join('');
+      const mNames = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+      document.getElementById("month").innerHTML = mNames.map((m, i) => `<option value="${i + 1}" ${i + 1 === curM ? 'selected' : ''}>${m}</option>`).join('');
       document.getElementById("month").onchange = reload;
     }
 
@@ -831,17 +833,17 @@
       let employees = [];
       for (let i = 0; i < rows.length; i++) {
         // 🆕 เพิ่มเงื่อนไข: ถ้าเจอแถวรวม ให้ข้ามไปเลย
-        if (rows[i].id === "totalRow") continue; 
+        if (rows[i].id === "totalRow") continue;
 
         const name = rows[i].cells[1].innerText.trim();
         const sal = rows[i].cells[2].innerText.replace(/,/g, '');
         const jobEl = rows[i].querySelector(".jobSelect"); // เก็บ Element ไว้ก่อน
 
         if (name !== "" && jobEl) { // เช็คว่ามีทั้งชื่อและกล่องเลือกตำแหน่ง
-          employees.push({ 
-            name, 
-            sal, 
-            job: jobEl.value 
+          employees.push({
+            name,
+            sal,
+            job: jobEl.value
           });
         }
       }
@@ -911,7 +913,7 @@
       // แก้เงื่อนไข: ถ้าไม่ใช่การสั่ง Force (คือไม่ใช่ true) และมี Cache ให้ดึงจาก Cache
       if (forceReload !== true && localDataCache && localDataCache[cacheKey]) {
         console.log("✅ [Hit]: " + cacheKey);
-        renderDataToUI(localDataCache[cacheKey]); 
+        renderDataToUI(localDataCache[cacheKey]);
         return;
       }
 
@@ -931,15 +933,15 @@
     let snapshotSettings = "", snapshotEmployees = "", snapshotSchedule = "";
     function renderDataToUI(data) {
       // console.log("กำลังวาดตารางด้วยข้อมูลนี้:", data);
-      
+
       // 1. เคลียร์ค่า/เซตค่าเบื้องต้น (ทำทันที)
       const s = data.settings || {};
-      if(document.getElementById("dayShift")) document.getElementById("dayShift").value = s.day_shift || 0;
-      if(document.getElementById("holiShift")) document.getElementById("holiShift").value = s.holi_shift || 0;
-      if(document.getElementById("needP")) document.getElementById("needP").value = s.need_p || 0;
-      if(document.getElementById("needCH")) document.getElementById("needCH").value = s.need_ch || 0;
-      
-      if(document.getElementById("budget")) {
+      if (document.getElementById("dayShift")) document.getElementById("dayShift").value = s.day_shift || 0;
+      if (document.getElementById("holiShift")) document.getElementById("holiShift").value = s.holi_shift || 0;
+      if (document.getElementById("needP")) document.getElementById("needP").value = s.need_p || 0;
+      if (document.getElementById("needCH")) document.getElementById("needCH").value = s.need_ch || 0;
+
+      if (document.getElementById("budget")) {
         const bValue = Number(s.budget) || 0;
         // document.getElementById("budget").value = bValue.toLocaleString();
         document.getElementById("budget").innerText = bValue.toLocaleString();
@@ -951,13 +953,13 @@
 
       // --- ใช้ Double RequestAnimationFrame เพื่อคุมจังหวะ Loading ---
       requestAnimationFrame(() => {
-        
+
         // 2. ล้างตารางเก่าทิ้งทันที (ป้องกันข้อมูลเดือนเก่าค้าง)
         const tbody = document.getElementById("tbody");
-        if (tbody) tbody.innerHTML = ""; 
+        if (tbody) tbody.innerHTML = "";
 
         // 3. สั่งสร้างตารางใหม่และใส่ข้อมูล (หนัก CPU)
-        buildTable(); 
+        buildTable();
         fillTableWithData(employeeData, data.schedule || []);
 
         const scheduleData = data.schedule || [];
@@ -966,10 +968,10 @@
 
         // 4. รอให้ Browser "วาดภาพตาราง" ลงจอเสร็จจริงๆ ก่อน
         requestAnimationFrame(() => {
-          
+
           // 5. เมื่อตารางมาแล้ว ค่อยคำนวณเปอร์เซ็นต์ (ซึ่งจะไปเขียนทับ Dots ทันที)
           if (typeof calculateSummary === "function") {
-            calculateSummary(); 
+            calculateSummary();
           } else {
             const percentEl = document.getElementById("percentValue");
             if (percentEl) percentEl.innerText = "0.00";
@@ -978,7 +980,7 @@
           if (typeof updateYearlyDisplay === "function") {
             updateYearlyDisplay(currentUserId);
           }
-          
+
           // console.log("✅ Render complete & Dots hidden.");
         });
       });
@@ -1049,7 +1051,7 @@
      * ติดตั้ง Event Listener ไว้ที่ tbody (ตัวแม่) 
      * ใส่โค้ดนี้ไว้ที่ส่วนเริ่มต้นของสคริปต์ (รันครั้งเดียวพอ)
      */
-    document.getElementById("tbody")?.addEventListener("change", function(e) {
+    document.getElementById("tbody")?.addEventListener("change", function (e) {
       if (e.target && e.target.classList.contains("job-select")) {
         const selectEl = e.target;
         const parentCell = selectEl.closest("td");
@@ -1061,7 +1063,7 @@
 
         // 2. สั่ง Refresh สีทั้งตาราง!
         // ฟังก์ชันนี้จะไล่เช็คทุกแถวใหม่หมด ไม่ต้องกลัวพลาด
-        refreshTableColors(); 
+        refreshTableColors();
 
         // 3. สั่งคำนวณผลสรุป
         if (typeof calculateSummary === "function") {
@@ -1074,16 +1076,16 @@
     function refreshTableColors() {
       const tableBody = document.getElementById("tbody");
       const rows = tableBody.querySelectorAll("tr");
-      
+
       rows.forEach(row => {
         // หา Cell ตำแหน่ง (index 3 หรือตามที่คุณตั้งไว้)
         const jobCell = row.cells[3];
         if (!jobCell) return;
-        
+
         // หาค่าจาก select หรือ text
         const select = jobCell.querySelector("select");
         const val = select ? select.value : jobCell.innerText.trim();
-        
+
         // ใส่สีตามค่าที่เจอ
         updateCellColor(jobCell, val);
       });
@@ -1107,17 +1109,17 @@
 
         // หยอดผลลัพธ์ลงในช่อง "รวม" หรือ "ค่าจ่าย" ของแถวนั้น
         // สมมติช่องรวมอยู่ที่คอลัมน์สุดท้าย
-        const totalCell = rows[i].querySelector(".row-total"); 
+        const totalCell = rows[i].querySelector(".row-total");
         if (totalCell) totalCell.innerText = shiftCount;
-        
+
         // คำนวณค่าแรง (ตัวอย่าง)
         const paymentCell = rows[i].querySelector(".row-payment");
         if (paymentCell) {
-            const payment = (salary / 30 / 7 * 8) * shiftCount;
-            paymentCell.innerText = payment.toLocaleString('th-TH', {minimumFractionDigits: 2});
+          const payment = (salary / 30 / 7 * 8) * shiftCount;
+          paymentCell.innerText = payment.toLocaleString('th-TH', { minimumFractionDigits: 2 });
         }
       }
-      
+
       // updateFooterTotals();
     }
 
@@ -1129,6 +1131,7 @@
       // 1. ด่านตรวจ: ถ้าไม่มีอะไรเปลี่ยน ก็จบการทำงาน
       const changes = getChanges();
       if (!changes.settings && !changes.employees && !changes.schedule) {
+        setBtnStatus(btn, false, originalText);
         alert("ไม่มีการแก้ไขข้อมูล");
         return;
       }
@@ -1195,8 +1198,8 @@
           alert("เกิดข้อผิดพลาด: " + err);
         })
         .saveSelectiveData(
-          currentUserId, 
-          userSettings, 
+          currentUserId,
+          userSettings,
           changes.employees ? employeesToSave : null,  // <--- แก้ตรงนี้: ส่ง null ถ้าไม่มีการแก้ไข
           changes.schedule ? scheduleToSave : null,    // <--- แก้ตรงนี้: ส่ง null ถ้าไม่มีการแก้ไข
           year,
@@ -1214,7 +1217,7 @@
         needCH: Number(document.getElementById("needCH")?.value || 0),
         budget: Number(document.getElementById("budget")?.innerText.replace(/,/g, '') || 0)
       };
-      
+
       const snapshotSettingsObj = JSON.parse(snapshotSettings || "{}");
       const snapshotSettingsNormalized = {
         day: Number(snapshotSettingsObj.day || 0),
@@ -1228,7 +1231,7 @@
       const settingsDiff = JSON.stringify(currentSettings) !== JSON.stringify(snapshotSettingsNormalized);
 
       // 2. Employees: เปลี่ยนชื่อตัวแปรรับค่า Parse เป็น localEmployees เพื่อไม่ให้ซ้ำกับ snapshotEmployees (Global)
-      const currentEmployees = getCurrentEmployeesFromTable(); 
+      const currentEmployees = getCurrentEmployeesFromTable();
       const localSnapshotEmployees = JSON.parse(snapshotEmployees || "[]");
       const employeesDiff = JSON.stringify(currentEmployees) !== JSON.stringify(localSnapshotEmployees);
 
@@ -1236,12 +1239,6 @@
       const currentSchedule = getCurrentScheduleFromTable();
       const localSnapshotSchedule = JSON.parse(snapshotSchedule || "[]");
       const scheduleDiff = JSON.stringify(currentSchedule) !== JSON.stringify(localSnapshotSchedule);
-
-      // Debug ดูค่าความต่าง
-      // console.log("--- ตรวจสอบความเปลี่ยนแปลง ---");
-      // console.log("Settings เปลี่ยนไหม:", settingsDiff);
-      // console.log("Employees เปลี่ยนไหม:", employeesDiff);
-      // console.log("Schedule เปลี่ยนไหม:", scheduleDiff);
 
       return {
         settings: settingsDiff,
@@ -1261,13 +1258,13 @@
 
       snapshotSettings = JSON.stringify(currentSettings);
       snapshotEmployees = JSON.stringify(getCurrentEmployeesFromTable());
-      
-    // console.log("Snapshot settings:", snapshotSettings)
+
+      // console.log("Snapshot settings:", snapshotSettings)
 
       const schedule = getCurrentScheduleFromTable();
       snapshotSchedule = JSON.stringify(schedule);
       lastKnownTotalCost = schedule.reduce((sum, item) => sum + Number(item.cost || 0), 0);
-      
+
       // console.log("✅ Snapshots updated.");
     }
 
@@ -1281,10 +1278,10 @@
         if (fullname === "") continue;
 
         // สมมติว่าตอน render ข้อมูล คุณใส่ ID ไว้ที่ tr เช่น <tr data-id="a0konj">
-        const empId = rows[i].getAttribute("data-id") || ""; 
+        const empId = rows[i].getAttribute("data-id") || "";
         const salary = Number(rows[i].cells[2].innerText.replace(/[^0-9.]/g, '')) || 0;
         const job = rows[i].cells[3].querySelector("select, input")?.value || rows[i].cells[3].innerText.trim();
-        
+
         employees.push({ id: empId, fullname, salary, job });
       }
       return employees;
@@ -1299,7 +1296,7 @@
 
       for (let i = 0; i < rows.length; i++) {
         if (rows[i].id === "totalRow") continue;
-        
+
         // ดึงเงินเดือนมาคำนวณ cost ด้วย
         const salary = Number(rows[i].cells[2].innerText.replace(/,/g, '')) || 0;
         const costPerDay = (salary / 30 / 7 * 8);
@@ -1307,8 +1304,8 @@
         for (let d = 1; d <= daysInMonth; d++) {
           const cell = rows[i].cells[3 + d];
           if (cell && cell.innerText.trim() !== "") {
-            schedule.push({ 
-              date: `${year - 543}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`, 
+            schedule.push({
+              date: `${year - 543}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`,
               shift: cell.innerText.trim(),
               cost: costPerDay // <--- เพิ่มตัวนี้เข้าไป
             });
@@ -1323,10 +1320,10 @@
       const m = parseInt(document.getElementById("month").value);
       const y = parseInt(document.getElementById("year").value) - 543;
       const days = new Date(y, m, 0).getDate();
-        
+
       // --- ส่วนหัว (เพิ่ม class col-salary ที่ th เงินเดือน) ---
       let h = `<tr><th>ที่</th><th>ชื่อ-สกุล</th><th class="col-salary">เงินเดือน</th><th>ตำแหน่ง</th>`;
-      for(let d=1; d<=days; d++) {
+      for (let d = 1; d <= days; d++) {
         const isHoli = holidays.includes(d);
         h += `<th class="${isHoli ? 'holiday' : ''}">${d}</th>`;
       }
@@ -1335,9 +1332,9 @@
 
       // --- ส่วนเนื้อหา (เพิ่ม class col-salary ที่ td เงินเดือน) ---
       let b = "";
-      for(let i=0; i<20; i++) {
+      for (let i = 0; i < 20; i++) {
         // ค้นหาส่วนเนื้อหา (20 แถว) ใน buildTable และปรับตรง <td> ตำแหน่ง
-        let rowHtml = `<tr><td>${i+1}</td>
+        let rowHtml = `<tr><td>${i + 1}</td>
             <td contenteditable="true"></td>
             <td contenteditable="true" class="col-salary"></td>
             <td class="job-cell">
@@ -1350,9 +1347,9 @@
             </td>`;
 
         // ... โค้ดส่วนสร้างวันที่เดิม ...
-        for(let d=1; d<=days; d++) {
-            const isHoli = holidays.includes(d);
-            rowHtml += `<td contenteditable="true" class="${isHoli ? 'holiday' : ''}"></td>`;
+        for (let d = 1; d <= days; d++) {
+          const isHoli = holidays.includes(d);
+          rowHtml += `<td contenteditable="true" class="${isHoli ? 'holiday' : ''}"></td>`;
         }
         rowHtml += `<td class="sumCell">0</td><td class="costCell">0</td></tr>`;
         b += rowHtml;
@@ -1362,13 +1359,13 @@
       // --- 🆕 แถวรวมที่ปรับ Padding/Margin ให้เท่าหัวตาราง ---
       // let f = `<tr id="totalRow"><td colspan="4" style="text-align: right;">รวม:</td>`;
       let f = `<tr id="totalRow"><td></td> <td></td> <td class="col-salary"></td> <td style="text-align: right;">รวม:</td>`;
-      for(let d=1; d<=days; d++) {
+      for (let d = 1; d <= days; d++) {
         // ใช้ padding: 10px 2px ให้เท่ากับที่กำหนดใน CSS #scheduleTable thead th
         f += `<td class="dayTotal" id="dayTotal_${d}">0</td>`;
       }
-        f += `<td id="grandTotalShifts">0</td>
+      f += `<td id="grandTotalShifts">0</td>
               <td id="grandTotalCost">0.00</td></tr>`;
-      
+
       document.getElementById("tbody").innerHTML = b + f;
       document.getElementById("tbody").oninput = calculateSummary;
     }
@@ -1377,19 +1374,19 @@
     function fillTableData() {
       const rows = document.getElementById("tbody").rows;
       employeeData.forEach((emp, i) => {
-        if(!rows[i]) return;
+        if (!rows[i]) return;
         rows[i].cells[1].innerText = emp.fullname;
         rows[i].cells[2].innerText = Number(emp.salary).toLocaleString();
         rows[i].querySelector(".jobSelect").value = emp.job || "";
       });
-      
-      const y = parseInt(document.getElementById("year").value)-543, m = document.getElementById("month").value;
+
+      const y = parseInt(document.getElementById("year").value) - 543, m = document.getElementById("month").value;
       google.script.run
         .withSuccessHandler(sch => {
-          if(!sch) return;
+          if (!sch) return;
           sch.forEach(item => {
             const idx = employeeData.findIndex(e => e.id == item.employeeId);
-            if(idx > -1) rows[idx].cells[3 + item.day].innerText = item.shift;
+            if (idx > -1) rows[idx].cells[3 + item.day].innerText = item.shift;
           });
           calculateSummary();
         }).getSchedule(y, m, currentUserId);
@@ -1430,16 +1427,16 @@
       const needCH = parseInt(document.getElementById("needCH").value) || 0;
       const dayS = parseInt(document.getElementById("dayShift").value) || 0;
       const holiS = parseInt(document.getElementById("holiShift").value) || 0;
-      
+
       const daysInMonth = new Date(year, month, 0).getDate();
       let totalTarget = 0;
 
       for (let d = 1; d <= daysInMonth; d++) {
-          const isHoli = (typeof holidays !== 'undefined' && holidays.includes(d));
-          // เงื่อนไข: วันหยุดมีกี่ผลัด (holiS), วันธรรมดามีกี่ผลัด (dayS)
-          const shiftsPerDay = isHoli ? holiS : dayS;
-          // (จำนวนผลัด x จำนวนคน พชง.) + (จำนวนผลัด x จำนวนคน ชชง.)
-          totalTarget += (shiftsPerDay * needP) + (shiftsPerDay * needCH);
+        const isHoli = (typeof holidays !== 'undefined' && holidays.includes(d));
+        // เงื่อนไข: วันหยุดมีกี่ผลัด (holiS), วันธรรมดามีกี่ผลัด (dayS)
+        const shiftsPerDay = isHoli ? holiS : dayS;
+        // (จำนวนผลัด x จำนวนคน พชง.) + (จำนวนผลัด x จำนวนคน ชชง.)
+        totalTarget += (shiftsPerDay * needP) + (shiftsPerDay * needCH);
       }
 
       // แสดงผล TargetShifts (จำนวนเวรจากการคำนวณ)
@@ -1452,56 +1449,56 @@
       let dayCounters = new Array(daysInMonth).fill(0);
 
       for (let i = 0; i < rows.length - 1; i++) {
-          if (rows[i].id === "totalRow") continue;
-          
-          const nameText = rows[i].cells[1].innerText.trim();
-          const salary = parseFloat(rows[i].cells[2].innerText.replace(/,/g, '')) || 0;
-          let rowShiftCount = 0;
+        if (rows[i].id === "totalRow") continue;
 
-          for (let d = 0; d < daysInMonth; d++) {
-              const cell = rows[i].cells[4 + d];
-              if (cell) {
-                  const val = cell.innerText.trim();
-                  const isHoliday = cell.classList.contains('holiday'); // ดึงสถานะวันหยุดจาก class
+        const nameText = rows[i].cells[1].innerText.trim();
+        const salary = parseFloat(rows[i].cells[2].innerText.replace(/,/g, '')) || 0;
+        let rowShiftCount = 0;
 
-                  // เปลี่ยนจากเดิมที่นับ ["1", "2", "3"] ทื่อๆ เป็นการคัดกรอง:
-                  if (val !== "" && ["1", "2", "3"].includes(val)) {
-                      
-                      // เงื่อนไข: ถ้าเป็นวันธรรมดา AND เป็นเวร 2 -> ไม่นับเวร (ไม่เพิ่ม rowShiftCount)
-                      if (!isHoliday && val === "2") {
-                          // ข้ามไป ไม่นับเวรนี้เข้าการคำนวณเงิน
-                      } else {
-                          // ถ้าไม่ใช่ (เป็นเลข 1, 3 หรือเป็นวันหยุด หรือเป็นเลข 2 วันหยุด) -> ให้นับเวร
-                          rowShiftCount++;
-                          dayCounters[d]++;
-                      }
-                  }
+        for (let d = 0; d < daysInMonth; d++) {
+          const cell = rows[i].cells[4 + d];
+          if (cell) {
+            const val = cell.innerText.trim();
+            const isHoliday = cell.classList.contains('holiday'); // ดึงสถานะวันหยุดจาก class
+
+            // เปลี่ยนจากเดิมที่นับ ["1", "2", "3"] ทื่อๆ เป็นการคัดกรอง:
+            if (val !== "" && ["1", "2", "3"].includes(val)) {
+
+              // เงื่อนไข: ถ้าเป็นวันธรรมดา AND เป็นเวร 2 -> ไม่นับเวร (ไม่เพิ่ม rowShiftCount)
+              if (!isHoliday && val === "2") {
+                // ข้ามไป ไม่นับเวรนี้เข้าการคำนวณเงิน
+              } else {
+                // ถ้าไม่ใช่ (เป็นเลข 1, 3 หรือเป็นวันหยุด หรือเป็นเลข 2 วันหยุด) -> ให้นับเวร
+                rowShiftCount++;
+                dayCounters[d]++;
               }
+            }
           }
+        }
 
-          const costPerShift = (salary / 30 / 7 * 8);
-          const totalCost = rowShiftCount * costPerShift;
+        const costPerShift = (salary / 30 / 7 * 8);
+        const totalCost = rowShiftCount * costPerShift;
 
-          // อัปเดตรายแถว (ไม่มีทศนิยม)
-          const sumCell = rows[i].querySelector(".sumCell");
-          const costCell = rows[i].querySelector(".costCell");
-          if (sumCell) sumCell.innerText = (nameText === "") ? "" : rowShiftCount;
-          // if (costCell) costCell.innerText = (nameText === "" || totalCost === 0) ? "" : Math.round(totalCost).toLocaleString();
-          if (costCell) costCell.innerText = (nameText === "" || totalCost === 0) ? "" : totalCost.toLocaleString('th-TH', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          });
+        // อัปเดตรายแถว (ไม่มีทศนิยม)
+        const sumCell = rows[i].querySelector(".sumCell");
+        const costCell = rows[i].querySelector(".costCell");
+        if (sumCell) sumCell.innerText = (nameText === "") ? "" : rowShiftCount;
+        // if (costCell) costCell.innerText = (nameText === "" || totalCost === 0) ? "" : Math.round(totalCost).toLocaleString();
+        if (costCell) costCell.innerText = (nameText === "" || totalCost === 0) ? "" : totalCost.toLocaleString('th-TH', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
 
-          if (nameText !== "") {
-              grandShifts += rowShiftCount;
-              grandCost += totalCost;
-          }
+        if (nameText !== "") {
+          grandShifts += rowShiftCount;
+          grandCost += totalCost;
+        }
       }
 
       // --- ส่วนที่ 3: อัปเดต Card ด้านบน (สรุปผล) ---
       const safeUpdate = (id, val) => {
-          const el = document.getElementById(id);
-          if (el) el.innerText = val;
+        const el = document.getElementById(id);
+        if (el) el.innerText = val;
       };
 
       // ค่าใช้จ่าย
@@ -1524,26 +1521,26 @@
       const yearlyTotal = costFromOtherMonths + grandCost;
       const yearlyTotalEl = document.getElementById("yearlyTotalCost");
       if (yearlyTotalEl) {
-          yearlyTotalEl.innerText = yearlyTotal.toLocaleString('th-TH', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-          });
+        yearlyTotalEl.innerText = yearlyTotal.toLocaleString('th-TH', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
       }
 
       // 3. คำนวณเปอร์เซ็นต์โดยใช้ budgetVal ที่คำนวณไว้แล้วด้านบน
       if (budgetVal > 0) {
-          const percent = (yearlyTotal / budgetVal) * 100;
-          document.getElementById("percentValue").innerText = percent.toFixed(2);
+        const percent = (yearlyTotal / budgetVal) * 100;
+        document.getElementById("percentValue").innerText = percent.toFixed(2);
       } else {
-          document.getElementById("percentValue").innerText = "0.00";
+        document.getElementById("percentValue").innerText = "0.00";
       }
 
       // แถวรวมรายวันท้ายตาราง
       dayCounters.forEach((count, index) => {
-          const el = document.getElementById(`dayTotal_${index + 1}`);
-          if (el) el.innerText = count > 0 ? count : "";
+        const el = document.getElementById(`dayTotal_${index + 1}`);
+        if (el) el.innerText = count > 0 ? count : "";
       });
-      
+
       // 6. อัปเดตช่องสรุปท้ายตาราง (ขวาล่างสุด)
       // รวมล่างสุด
       document.getElementById("grandTotalShifts").innerText = grandShifts > 0 ? grandShifts : "";
@@ -1551,7 +1548,7 @@
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       }) : "";
-    
+
     }
 
     // 5. Smart Paste จาก Excel
@@ -1563,7 +1560,7 @@
       e.preventDefault();
       const rowsData = text.split(/\r?\n/).filter(r => r.trim() !== "");
       const startR = active.parentElement.rowIndex - 1, startC = active.cellIndex, tbody = document.getElementById("tbody");
-      
+
       rowsData.forEach((rt, ri) => {
         const cols = rt.split("\t"), row = tbody.rows[startR + ri];
         if (!row) return;
@@ -1578,7 +1575,7 @@
       });
       // หลังวางเสร็จ ถ้าแถวแรกที่วางมีการเลือกตำแหน่งไว้ ให้ inherit ลงไปเลย
       const firstSelect = tbody.rows[startR].querySelector(".jobSelect");
-      if(firstSelect && firstSelect.value) inheritJob(firstSelect);
+      if (firstSelect && firstSelect.value) inheritJob(firstSelect);
       calculateSummary();
     });
 
@@ -1620,21 +1617,21 @@
       for (let d = 1; d <= daysInMonth; d++) {
         const isHoli = holidays.includes(d);
         // เลือกว่าวันนี้มีกี่ผลัด (1,3 หรือ 1,2,3) ตามที่คุณกรอกใน Input
-        const shiftTypes = isHoli ? (holiS === 3 ? [1,2,3] : (holiS === 2 ? [2,3] : [3])) : (dayS === 2 ? [1,3] : [3]);
-        
+        const shiftTypes = isHoli ? (holiS === 3 ? [1, 2, 3] : (holiS === 2 ? [2, 3] : [3])) : (dayS === 2 ? [1, 3] : [3]);
+
         shiftTypes.forEach(st => {
           // คำนวณยอดรวมที่ต้องใช้จริง
           totalRequiredP += needP;
           totalRequiredCH += needCH;
-          
+
           // เก็บข้อมูลไว้กระจายลงตาราง
-          for(let i=0; i<needP; i++) dailyPlan.push({ day: d, shift: st, job: "พชง" });
-          for(let i=0; i<needCH; i++) dailyPlan.push({ day: d, shift: st, job: "ชชง" });
+          for (let i = 0; i < needP; i++) dailyPlan.push({ day: d, shift: st, job: "พชง" });
+          for (let i = 0; i < needCH; i++) dailyPlan.push({ day: d, shift: st, job: "ชชง" });
         });
       }
 
       // ตัวแปรนี้คือผลรวมทั้งหมดที่จะไปโชว์ในกล่อง "สรุปข้อมูล" (Target)
-      const totalRequiredShifts = totalRequiredP + totalRequiredCH; 
+      const totalRequiredShifts = totalRequiredP + totalRequiredCH;
       document.getElementById("targetShifts").innerText = totalRequiredShifts;
 
       // --- ต่อไปก็นำ totalRequiredP และ totalRequiredCH ไปเข้าฟังก์ชัน calculateQuota ---
@@ -1644,7 +1641,7 @@
       // 4. ฟังก์ชันคำนวณโควตาตามสูตร (Inverse Weight + Adjust)
       function calculateQuota(group, totalRequired) {
         if (group.length === 0) return;
-        
+
         // SUMPRODUCT(1/เงินเดือน)
         const sumInverse = group.reduce((acc, e) => acc + (1 / e.salary), 0);
         let currentTotal = 0;
@@ -1682,12 +1679,12 @@
 
       const firstDayOfMonth = new Date(y, m - 1, 1).getDay();
       const allEmps = [...empsP, ...empsCH];
-      
+
       dailyPlan.sort(() => Math.random() - 0.5);
 
       dailyPlan.forEach(plan => {
         const weekIdx = Math.floor((plan.day + firstDayOfMonth - 1) / 7);
-        
+
         // --- ปรับปรุงระบบเลือก Candidate ---
         // รอบที่ 1: เลือกคนที่ยังทำเวรไม่ครบโควตา (ทำตามสูตรเป๊ะๆ)
         let candidates = allEmps.filter(e => {
@@ -1707,7 +1704,7 @@
 
         // เรียงลำดับเพื่อให้เวรเฉลี่ยเท่าๆ กัน
         candidates.sort((a, b) => {
-          if (a.weeklyCount[weekIdx] !== b.weeklyCount[weekIdx]) 
+          if (a.weeklyCount[weekIdx] !== b.weeklyCount[weekIdx])
             return a.weeklyCount[weekIdx] - b.weeklyCount[weekIdx];
           return a.count - b.count;
         });
@@ -1729,7 +1726,7 @@
       // หา span ที่อยู่ก่อนหน้า select ตัวนี้
       const span = selectElement.parentElement.querySelector('.job-text');
       span.innerText = selectElement.value;
-      
+
       // เรียกฟังก์ชันเดิมของคุณ (ถ้ามี)
       if (typeof inheritJob === "function") inheritJob(selectElement);
       if (typeof calculateSummary === "function") calculateSummary();
@@ -1738,7 +1735,7 @@
 
     // ฟังก์ชันสำหรับปุ่ม "รายงาน" (เหมือนกด Ctrl + P)
     function printReport() {
-      window.print(); 
+      window.print();
     }
 
     // ฟังก์ชันสำหรับปุ่ม "ตารางเวร" (ส่งข้อมูลไปสร้าง PDF ใน Google Sheets)
@@ -1751,16 +1748,16 @@
       // 2. รวบรวมข้อมูลที่จำเป็น (ดึงจากตัวแปรที่คุณมีอยู่แล้ว)
       const y = document.getElementById("year").value;
       const m = document.getElementById("month").value;
-      
+
       // 3. ส่งข้อมูลกลับไปที่ code.gs
       google.script.run
         .withSuccessHandler(url => {
           setBtnStatus(btn, false, originalText);
-          
+
           if (url && !url.includes("Server Error")) {
             // --- จุดสำคัญ: สั่งเปิด Tab ใหม่ที่นี่ ---
             const newTab = window.open(url, '_blank');
-            
+
             // กรณี Browser บล็อก Popup (เผื่อไว้)
             if (!newTab) {
               alert("กรุณาเปิด Popup เพื่อดู PDF");
