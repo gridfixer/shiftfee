@@ -1580,146 +1580,150 @@
     });
 
     function runCalc() {
-      const btn = document.getElementById("btnCalc");
-      const originalText = btn.innerText;
-      setBtnStatus(btn, true, "กำลังคำนวณ...");
+      const isConfirmed = confirm("การคำนวณจะล้างข้อมูลเวรภายในเดือนทั้งหมด!\nกรุณายืนยันให้ดำเนินการต่อ");
+      if (isConfirmed) {
+      
+        const btn = document.getElementById("btnCalc");
+        const originalText = btn.innerText;
+        setBtnStatus(btn, true, "กำลังคำนวณ...");
 
-      // 1. ดึงค่าพื้นฐานจากหน้าจอ
-      const y = parseInt(document.getElementById("year").value) - 543;
-      const m = parseInt(document.getElementById("month").value);
-      const needP = parseInt(document.getElementById("needP").value) || 1;
-      const needCH = parseInt(document.getElementById("needCH").value) || 1;
-      const dayS = parseInt(document.getElementById("dayShift").value) || 0;
-      const holiS = parseInt(document.getElementById("holiShift").value) || 0;
+        // 1. ดึงค่าพื้นฐานจากหน้าจอ
+        const y = parseInt(document.getElementById("year").value) - 543;
+        const m = parseInt(document.getElementById("month").value);
+        const needP = parseInt(document.getElementById("needP").value) || 1;
+        const needCH = parseInt(document.getElementById("needCH").value) || 1;
+        const dayS = parseInt(document.getElementById("dayShift").value) || 0;
+        const holiS = parseInt(document.getElementById("holiShift").value) || 0;
 
-      // 2. แยกกลุ่มพนักงาน พชง และ ชชง
-      const rows = document.getElementById("tbody").rows;
-      let empsP = [];
-      let empsCH = [];
+        // 2. แยกกลุ่มพนักงาน พชง และ ชชง
+        const rows = document.getElementById("tbody").rows;
+        let empsP = [];
+        let empsCH = [];
 
-      for (let i = 0; i < rows.length - 1; i++) {
-        const name = rows[i].cells[1].innerText.trim();
-        const salary = parseFloat(rows[i].cells[2].innerText.replace(/,/g, '')) || 0;
-        const job = rows[i].querySelector(".jobSelect").value;
-        if (name && salary > 0) {
-          const empObj = { index: i, name, salary, job, count: 0, weeklyCount: new Array(6).fill(0) };
-          if (job === "พชง") empsP.push(empObj);
-          else if (job === "ชชง") empsCH.push(empObj);
-        }
-      }
-
-      // 3. คำนวณจำนวนเวรที่ต้องจัดทั้งหมดในเดือนนี้ (แยกประเภทงาน)
-      const daysInMonth = new Date(y, m, 0).getDate();
-      let totalRequiredP = 0;   // แยกของ พชง.
-      let totalRequiredCH = 0;  // แยกของ ชชง.
-      let dailyPlan = [];
-
-      for (let d = 1; d <= daysInMonth; d++) {
-        const isHoli = holidays.includes(d);
-        // เลือกว่าวันนี้มีกี่ผลัด (1,3 หรือ 1,2,3) ตามที่คุณกรอกใน Input
-        const shiftTypes = isHoli ? (holiS === 3 ? [1, 2, 3] : (holiS === 2 ? [2, 3] : [3])) : (dayS === 2 ? [1, 3] : [3]);
-
-        shiftTypes.forEach(st => {
-          // คำนวณยอดรวมที่ต้องใช้จริง
-          totalRequiredP += needP;
-          totalRequiredCH += needCH;
-
-          // เก็บข้อมูลไว้กระจายลงตาราง
-          for (let i = 0; i < needP; i++) dailyPlan.push({ day: d, shift: st, job: "พชง" });
-          for (let i = 0; i < needCH; i++) dailyPlan.push({ day: d, shift: st, job: "ชชง" });
-        });
-      }
-
-      // ตัวแปรนี้คือผลรวมทั้งหมดที่จะไปโชว์ในกล่อง "สรุปข้อมูล" (Target)
-      const totalRequiredShifts = totalRequiredP + totalRequiredCH;
-      document.getElementById("targetShifts").innerText = totalRequiredShifts;
-
-      // --- ต่อไปก็นำ totalRequiredP และ totalRequiredCH ไปเข้าฟังก์ชัน calculateQuota ---
-      calculateQuota(empsP, totalRequiredP);
-      calculateQuota(empsCH, totalRequiredCH);
-
-      // 4. ฟังก์ชันคำนวณโควตาตามสูตร (Inverse Weight + Adjust)
-      function calculateQuota(group, totalRequired) {
-        if (group.length === 0) return;
-
-        // SUMPRODUCT(1/เงินเดือน)
-        const sumInverse = group.reduce((acc, e) => acc + (1 / e.salary), 0);
-        let currentTotal = 0;
-
-        // สูตร ROUND((1/เงินเดือน) / SUM(1/เงินเดือน) * จำนวนเวรทั้งหมด)
-        group.forEach(e => {
-          e.quota = Math.round(((1 / e.salary) / sumInverse) * totalRequired);
-          currentTotal += e.quota;
-        });
-
-        // ปรับส่วนต่าง (Adjust)
-        let diff = totalRequired - currentTotal;
-        if (diff > 0) {
-          // ต่ำกว่าเป้า: บวกเพิ่มให้คนเงินเดือนน้อย (เรียงจากน้อยไปมาก)
-          group.sort((a, b) => a.salary - b.salary);
-          for (let i = 0; diff > 0; i = (i + 1) % group.length) {
-            group[i].quota++;
-            diff--;
-          }
-        } else if (diff < 0) {
-          // มากกว่าเป้า: ลดจากคนเงินเดือนมาก (เรียงจากมากไปน้อย)
-          group.sort((a, b) => b.salary - a.salary);
-          while (diff < 0) {
-            for (let i = 0; i < group.length && diff < 0; i++) {
-              if (group[i].quota > 0) { group[i].quota--; diff++; }
-            }
+        for (let i = 0; i < rows.length - 1; i++) {
+          const name = rows[i].cells[1].innerText.trim();
+          const salary = parseFloat(rows[i].cells[2].innerText.replace(/,/g, '')) || 0;
+          const job = rows[i].querySelector(".jobSelect").value;
+          if (name && salary > 0) {
+            const empObj = { index: i, name, salary, job, count: 0, weeklyCount: new Array(6).fill(0) };
+            if (job === "พชง") empsP.push(empObj);
+            else if (job === "ชชง") empsCH.push(empObj);
           }
         }
-      }
 
-      // 5. ล้างตารางและเริ่มกระจายเวรลงแต่ละสัปดาห์
-      for (let r = 0; r < rows.length - 1; r++) {
-        for (let c = 4; c < rows[r].cells.length - 2; c++) rows[r].cells[c].innerText = "";
-      }
+        // 3. คำนวณจำนวนเวรที่ต้องจัดทั้งหมดในเดือนนี้ (แยกประเภทงาน)
+        const daysInMonth = new Date(y, m, 0).getDate();
+        let totalRequiredP = 0;   // แยกของ พชง.
+        let totalRequiredCH = 0;  // แยกของ ชชง.
+        let dailyPlan = [];
 
-      const firstDayOfMonth = new Date(y, m - 1, 1).getDay();
-      const allEmps = [...empsP, ...empsCH];
-
-      dailyPlan.sort(() => Math.random() - 0.5);
-
-      dailyPlan.forEach(plan => {
-        const weekIdx = Math.floor((plan.day + firstDayOfMonth - 1) / 7);
-
-        // --- ปรับปรุงระบบเลือก Candidate ---
-        // รอบที่ 1: เลือกคนที่ยังทำเวรไม่ครบโควตา (ทำตามสูตรเป๊ะๆ)
-        let candidates = allEmps.filter(e => {
-          if (e.job !== plan.job || e.count >= e.quota) return false;
-          if (rows[e.index].cells[3 + plan.day].innerText !== "") return false;
-          return true;
-        });
-
-        // รอบที่ 2 (Fallback): ถ้าหาไม่เจอจริงๆ (เวรจะหาย) ให้ยอมเลือกคนที่มีโควตาครบแล้วมาช่วย
-        if (candidates.length === 0) {
-          candidates = allEmps.filter(e => {
-            if (e.job !== plan.job) return false;
-            if (rows[e.index].cells[3 + plan.day].innerText !== "") return false;
-            return true;
+        for (let d = 1; d <= daysInMonth; d++) {
+          const isHoli = holidays.includes(d);
+          // เลือกว่าวันนี้มีกี่ผลัด (1,3 หรือ 1,2,3) ตามที่คุณกรอกใน Input
+          const shiftTypes = isHoli ? (holiS === 3 ? [1,2,3] : (holiS === 2 ? [2,3] : [3])) : (dayS === 2 ? [1,3] : [3]);
+          
+          shiftTypes.forEach(st => {
+            // คำนวณยอดรวมที่ต้องใช้จริง
+            totalRequiredP += needP;
+            totalRequiredCH += needCH;
+            
+            // เก็บข้อมูลไว้กระจายลงตาราง
+            for(let i=0; i<needP; i++) dailyPlan.push({ day: d, shift: st, job: "พชง" });
+            for(let i=0; i<needCH; i++) dailyPlan.push({ day: d, shift: st, job: "ชชง" });
           });
         }
 
-        // เรียงลำดับเพื่อให้เวรเฉลี่ยเท่าๆ กัน
-        candidates.sort((a, b) => {
-          if (a.weeklyCount[weekIdx] !== b.weeklyCount[weekIdx])
-            return a.weeklyCount[weekIdx] - b.weeklyCount[weekIdx];
-          return a.count - b.count;
+        // ตัวแปรนี้คือผลรวมทั้งหมดที่จะไปโชว์ในกล่อง "สรุปข้อมูล" (Target)
+        const totalRequiredShifts = totalRequiredP + totalRequiredCH; 
+        document.getElementById("targetShifts").innerText = totalRequiredShifts;
+
+        // --- ต่อไปก็นำ totalRequiredP และ totalRequiredCH ไปเข้าฟังก์ชัน calculateQuota ---
+        calculateQuota(empsP, totalRequiredP);
+        calculateQuota(empsCH, totalRequiredCH);
+
+        // 4. ฟังก์ชันคำนวณโควตาตามสูตร (Inverse Weight + Adjust)
+        function calculateQuota(group, totalRequired) {
+          if (group.length === 0) return;
+          
+          // SUMPRODUCT(1/เงินเดือน)
+          const sumInverse = group.reduce((acc, e) => acc + (1 / e.salary), 0);
+          let currentTotal = 0;
+
+          // สูตร ROUND((1/เงินเดือน) / SUM(1/เงินเดือน) * จำนวนเวรทั้งหมด)
+          group.forEach(e => {
+            e.quota = Math.round(((1 / e.salary) / sumInverse) * totalRequired);
+            currentTotal += e.quota;
+          });
+
+          // ปรับส่วนต่าง (Adjust)
+          let diff = totalRequired - currentTotal;
+          if (diff > 0) {
+            // ต่ำกว่าเป้า: บวกเพิ่มให้คนเงินเดือนน้อย (เรียงจากน้อยไปมาก)
+            group.sort((a, b) => a.salary - b.salary);
+            for (let i = 0; diff > 0; i = (i + 1) % group.length) {
+              group[i].quota++;
+              diff--;
+            }
+          } else if (diff < 0) {
+            // มากกว่าเป้า: ลดจากคนเงินเดือนมาก (เรียงจากมากไปน้อย)
+            group.sort((a, b) => b.salary - a.salary);
+            while (diff < 0) {
+              for (let i = 0; i < group.length && diff < 0; i++) {
+                if (group[i].quota > 0) { group[i].quota--; diff++; }
+              }
+            }
+          }
+        }
+
+        // 5. ล้างตารางและเริ่มกระจายเวรลงแต่ละสัปดาห์
+        for (let r = 0; r < rows.length - 1; r++) {
+          for (let c = 4; c < rows[r].cells.length - 2; c++) rows[r].cells[c].innerText = "";
+        }
+
+        const firstDayOfMonth = new Date(y, m - 1, 1).getDay();
+        const allEmps = [...empsP, ...empsCH];
+        
+        dailyPlan.sort(() => Math.random() - 0.5);
+
+        dailyPlan.forEach(plan => {
+          const weekIdx = Math.floor((plan.day + firstDayOfMonth - 1) / 7);
+          
+          // --- ปรับปรุงระบบเลือก Candidate ---
+          // รอบที่ 1: เลือกคนที่ยังทำเวรไม่ครบโควตา (ทำตามสูตรเป๊ะๆ)
+          let candidates = allEmps.filter(e => {
+            if (e.job !== plan.job || e.count >= e.quota) return false;
+            if (rows[e.index].cells[3 + plan.day].innerText !== "") return false;
+            return true;
+          });
+
+          // รอบที่ 2 (Fallback): ถ้าหาไม่เจอจริงๆ (เวรจะหาย) ให้ยอมเลือกคนที่มีโควตาครบแล้วมาช่วย
+          if (candidates.length === 0) {
+            candidates = allEmps.filter(e => {
+              if (e.job !== plan.job) return false;
+              if (rows[e.index].cells[3 + plan.day].innerText !== "") return false;
+              return true;
+            });
+          }
+
+          // เรียงลำดับเพื่อให้เวรเฉลี่ยเท่าๆ กัน
+          candidates.sort((a, b) => {
+            if (a.weeklyCount[weekIdx] !== b.weeklyCount[weekIdx]) 
+              return a.weeklyCount[weekIdx] - b.weeklyCount[weekIdx];
+            return a.count - b.count;
+          });
+
+          if (candidates.length > 0) {
+            const s = candidates[0];
+            rows[s.index].cells[3 + plan.day].innerText = plan.shift;
+            s.count++;
+            s.weeklyCount[weekIdx]++;
+          }
         });
 
-        if (candidates.length > 0) {
-          const s = candidates[0];
-          rows[s.index].cells[3 + plan.day].innerText = plan.shift;
-          s.count++;
-          s.weeklyCount[weekIdx]++;
-        }
-      });
-
-      calculateSummary();
-      setBtnStatus(btn, false, originalText);
-
+        calculateSummary();
+        setBtnStatus(btn, false, originalText);
+      
+      }
     }
 
     function updateJobText(selectElement) {
